@@ -1,0 +1,3 @@
+[submodule "source/math"]
+	path = source/math
+	url = https://github.com/BacheyG/cpp-math
