@@ -1,20 +1,22 @@
 #pragma once
-#ifdef UNREAL
+#ifdef UPROPERTY
 
 #include "CoreMinimal.h"
-#include "Kismet/KismetMathLibrary.h"
+#include "MathUtil.h"
 
 #define STRING FString
 #define LENGTH(x) x.Len()
 #define SUBSTRING(x,p,n) x.Mid(p,n)
 #define EMPTY(x) x.IsEmpty()
-#define ATOI FCString::Atoi
-#define ATOD FCString::Atod
+#define ATOI(x) FCString::Atoi(*x)
+#define ATOD(x) FCString::Atod(*x)
 
 #define ARRAY TArray
-#define VECTOR2 Vector2
+#define SIZE(x) x.Num()
+#define ADD(x, y) x.Add(y)
+#define VECTOR2D FVector2D
 
-#define MAX std::max
+#define MAX FMath::Max
 #define PI TMathUtilConstants<double>::Pi
 #else
 #define _USE_MATH_DEFINES
@@ -41,9 +43,9 @@
 #define MAX std::max
 #define PI M_PI
 
+#endif
+
 template<typename T>
 T GetRangeMappedValue(T value, T min, T max) {
 	return (max - value) / (max - min);
 }
-
-#endif

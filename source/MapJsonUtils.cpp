@@ -120,7 +120,7 @@ static void TryParseValueFor(const STRING& itemNameToParse, T& target, const STR
 }
 
 static void SeekToNextCoordinate(const STRING& mapDataJson, int32_t& i) {
-	while (i < SIZE(mapDataJson) && !IsNumber(mapDataJson[i])) {
+	while (i < LENGTH(mapDataJson) && !IsNumber(mapDataJson[i])) {
 		++i;
 	}
 }
