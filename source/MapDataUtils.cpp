@@ -3,10 +3,12 @@
 #include "MapDataUtils.h"
 #include "FTileMapData.h"
 #include "TileUtils.h"
+#include "tinyxml2.h"
 
 #include <algorithm>
 #include <ctype.h>
 #include <type_traits>
+#include <unordered_map>
 
 struct JsonParserState {
 public:
@@ -288,5 +290,24 @@ bool MapJsonUtils::ProcessMapDataFromGeoJson(const STRING& mapDataJson, FTileMap
 		}
 	}
 
+	return true;
+}
+
+bool MapJsonUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData* parsedMapData, int32_t tileX, int32_t tileY) 
+{
+	tinyxml2::XMLDocument doc;
+	tinyxml2::XMLError error = doc.Parse(mapDataOsm.c_str());
+
+	if (error != tinyxml2::XML_SUCCESS) {
+		return false;
+	}
+	std::unordered_map<int, LatLong> nodes;
+	tinyxml2::XMLElement* root = doc.RootElement();
+	for (tinyxml2::XMLElement* node = root->FirstChildElement("node"); node != nullptr; node = node->NextSiblingElement("node")) {
+		const char* id = node->Attribute("id");
+		const char* lat = node->Attribute("lat");
+		const char* lon = node->Attribute("lon");
+		nodes[std::stoll(id)] = LatLong(std::stod(lat), std::stod(lon));
+	}
 	return true;
 }
