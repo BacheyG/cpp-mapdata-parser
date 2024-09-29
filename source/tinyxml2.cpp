@@ -118,7 +118,7 @@ distribution.
 static const char LINE_FEED				= static_cast<char>(0x0a);			// all line endings are normalized to LF
 static const char LF = LINE_FEED;
 static const char CARRIAGE_RETURN		= static_cast<char>(0x0d);			// CR gets filtered out
-static const char CR = CARRIAGE_RETURN;
+static const char CARR = CARRIAGE_RETURN;
 static const char SINGLE_QUOTE			= '\'';
 static const char DOUBLE_QUOTE			= '\"';
 
@@ -291,7 +291,7 @@ const char* StrPair::GetStr()
             char* q = _start;	// the write pointer
 
             while( p < _end ) {
-                if ( (_flags & NEEDS_NEWLINE_NORMALIZATION) && *p == CR ) {
+                if ( (_flags & NEEDS_NEWLINE_NORMALIZATION) && *p == CARR ) {
                     // CR-LF pair becomes LF
                     // CR alone becomes LF
                     // LF-CR becomes LF
@@ -305,7 +305,7 @@ const char* StrPair::GetStr()
                     ++q;
                 }
                 else if ( (_flags & NEEDS_NEWLINE_NORMALIZATION) && *p == LF ) {
-                    if ( *(p+1) == CR ) {
+                    if ( *(p+1) == CARR ) {
                         p += 2;
                     }
                     else {

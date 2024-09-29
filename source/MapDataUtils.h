@@ -5,7 +5,7 @@
 #include "type_defines.h"
 #include "FTileMapData.h"
 
-class MapJsonUtils
+class MapDataUtils
 {
 public:
 	static constexpr int32_t k_tileSizeWorld = 30000;

@@ -293,7 +293,7 @@ bool MapJsonUtils::ProcessMapDataFromGeoJson(const STRING& mapDataJson, FTileMap
 	return true;
 }
 
-bool MapJsonUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData* parsedMapData, int32_t tileX, int32_t tileY) 
+bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData* parsedMapData, int32_t tileX, int32_t tileY) 
 {
 	tinyxml2::XMLDocument doc;
 	tinyxml2::XMLError error = doc.Parse(mapDataOsm.c_str());
