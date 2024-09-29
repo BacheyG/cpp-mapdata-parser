@@ -270,7 +270,7 @@ static void ParseLayer(const TileData& inputData, int32_t& i, FMapLayer& layer) 
 	}
 }
 
-bool MapJsonUtils::ProcessMapDataFromGeoJson(const STRING& mapDataJson, FTileMapData* parsedMapData, int32_t tileX, int32_t tileY)
+bool MapDataUtils::ProcessMapDataFromGeoJson(const STRING& mapDataJson, FTileMapData* parsedMapData, int32_t tileX, int32_t tileY)
 {
 	if (EMPTY(mapDataJson)) {
 		return false;
