@@ -5,6 +5,7 @@
 #include "MathUtil.h"
 
 #define STRING FString
+#define CSTRINGOF(x) StringCast<ANSICHAR>(*(x)).Get()
 #define LENGTH(x) x.Len()
 #define SUBSTRING(x,p,n) x.Mid(p,n)
 #define EMPTY(x) x.IsEmpty()
@@ -17,7 +18,7 @@
 #define VECTOR2D FVector2D
 
 #define MAX FMath::Max
-#define PI TMathUtilConstants<double>::Pi
+#define MAP_PI TMathUtilConstants<double>::Pi
 #else
 #define _USE_MATH_DEFINES
 
@@ -41,7 +42,7 @@
 #define VECTOR2D Vector2D<double>
 
 #define MAX std::max
-#define PI M_PI
+#define MAP_PI M_PI
 
 #endif
 

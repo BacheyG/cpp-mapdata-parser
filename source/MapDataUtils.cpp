@@ -9,6 +9,7 @@
 #include <ctype.h>
 #include <type_traits>
 #include <unordered_map>
+#include <string>
 
 struct JsonParserState {
 public:
@@ -296,7 +297,7 @@ bool MapJsonUtils::ProcessMapDataFromGeoJson(const STRING& mapDataJson, FTileMap
 bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData* parsedMapData, int32_t tileX, int32_t tileY) 
 {
 	tinyxml2::XMLDocument doc;
-	tinyxml2::XMLError error = doc.Parse(mapDataOsm.c_str());
+	tinyxml2::XMLError error = doc.Parse(CSTRINGOF(mapDataOsm));
 
 	if (error != tinyxml2::XML_SUCCESS) {
 		return false;
