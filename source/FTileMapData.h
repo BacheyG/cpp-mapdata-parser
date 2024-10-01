@@ -2,7 +2,16 @@
 
 #pragma once
 
+#include "LatLong.h"
 #include "type_defines.h"
+
+struct TileData {
+public:
+	TileData(LatLong lower, LatLong upper, const STRING& mapDataJson) : lowerCorner(lower), upperCorner(upper), mapDataJson(mapDataJson) {}
+	LatLong lowerCorner;
+	LatLong upperCorner;
+	const STRING& mapDataJson;
+};
 
 struct FCoordinate {
 public:
@@ -21,7 +30,6 @@ public:
 struct FFeatureGeometry {
 public:
 	STRING type;
-
 	ARRAY<FShape> shapes;
 };
 

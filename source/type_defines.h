@@ -1,4 +1,5 @@
 #pragma once
+
 #ifdef UPROPERTY
 
 #include "CoreMinimal.h"
@@ -30,6 +31,7 @@
 #include "math/Vector.hpp"
 
 #define STRING std::string
+#define CSTRINGOF(x) x.c_str()
 #define LENGTH(x) x.length()
 #define SUBSTRING(x,p,n) x.substr(p,n)
 #define EMPTY(x) x.empty()
