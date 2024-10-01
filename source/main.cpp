@@ -3,7 +3,7 @@
 #include <fstream>
 #include <locale>
 #include <codecvt>
-\
+#include <sstream>
 #include "MapDataUtils.h"
 
 std::string wstringToString(const std::wstring& wstr) {
@@ -25,17 +25,16 @@ int main() {
     FTileMapData parsedTile;
     MapDataUtils::ProcessMapDataFromGeoJson(jsonContent, &parsedTile, 36232, 22913);
 
-    std::wfstream exampleFile2;
-    std::wstring osmContent;
-    exampleFile2.open("../data/example.osm", std::ios::in);
-    while (exampleFile2) {
-        std::wstring temp;
-        exampleFile2 >> temp;
-        osmContent += temp + L"\n";
+    std::wifstream osmExampleFile("../data/example.osm");
+    std::wstringstream osmContent;
+    if (osmExampleFile.is_open()) {
+        osmContent << osmExampleFile.rdbuf();
     }
-    exampleFile2.close();
+    osmExampleFile.close();
 
-    MapDataUtils::ProcessMapDataFromOsm(wstringToString(osmContent), &parsedTile, 36232, 22913);
+    std::wstring contentString = osmContent.str();
+
+    MapDataUtils::ProcessMapDataFromOsm(wstringToString(contentString), &parsedTile, 36232, 22913);
 
     return 0;
 }

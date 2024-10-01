@@ -2,6 +2,7 @@
 
 #include "MapDataUtils.h"
 #include "JsonParserUtils.h"
+#include "OsmParserUtils.h"
 #include "TileUtils.h"
 #include "tinyxml2.h"
 
@@ -44,27 +45,28 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 		return false;
 	}
 	// ID to LatLong coordinates
-	typedef std::unordered_map<uint64_t, LatLong> NodeCache;
-	typedef std::unordered_map<uint64_t, std::vector<LatLong*>> WayCache;
+	typedef std::unordered_map<uint64_t, OsmNode> NodeCache;
+	typedef std::unordered_map<uint64_t, OsmWay> WayCache;
+	typedef std::unordered_map<uint64_t, OsmRelation> RelationCache;
 
 	NodeCache nodes;
 	WayCache ways;
+	RelationCache relations;
 
 	tinyxml2::XMLElement* root = doc.RootElement();
 
 	// Cache all nodes
 	for (tinyxml2::XMLElement* node = root->FirstChildElement("node"); node != nullptr; node = node->NextSiblingElement("node")) {
-		const char* id = node->Attribute("id");
+		const char* nodeId = node->Attribute("id");
 		const char* lat = node->Attribute("lat");
 		const char* lon = node->Attribute("lon");
-		nodes[std::stoull(id)] = LatLong(std::stod(lat), std::stod(lon));
+		nodes[std::stoull(nodeId)] = OsmNode(LatLong(std::stod(lat), std::stod(lon)));
 	}
 
 	// Cache all ways
 	for (tinyxml2::XMLElement* way = root->FirstChildElement("way"); way != nullptr; way = way->NextSiblingElement("way")) {
-		const char* id = way->Attribute("id");
-		std::vector<LatLong*> nodeReferences;
-		ways[std::stoull(id)] = nodeReferences;
+		const char* wayId = way->Attribute("id");
+		std::vector<OsmNode*> nodeReferences;
 		// For each 'nd' (node reference) element inside this way
 		for (tinyxml2::XMLElement* nd = way->FirstChildElement("nd"); nd != nullptr; nd = nd->NextSiblingElement("nd")) {
 			const char* ref = nd->Attribute("ref");  // 'ref' is the node ID
@@ -75,7 +77,36 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 				nodeReferences.push_back(&(nodes[nodeId]));  // Add the LatLong of the node to the vector
 			}
 		}
+
+		ways[std::stoull(wayId)] = OsmWay(nodeReferences);
 	}
+
+	// Cache all relations
+	for (tinyxml2::XMLElement* relation = root->FirstChildElement("relation"); relation != nullptr; relation = relation->NextSiblingElement("relation")) {
+		const char* relationId = relation->Attribute("id");
+		OsmRelation currentRelation;
+		// For each 'member' (node reference) element inside this way
+		for (tinyxml2::XMLElement* member = relation->FirstChildElement("member"); member != nullptr; member = member->NextSiblingElement("member")) {
+			const char* type = member->Attribute("type");
+			const char* ref = member->Attribute("ref");
+			const char* role = member->Attribute("role");
+			uint64_t memberId = std::stoull(ref);
+
+			// Check if the node exists in the cached nodes
+			if (strcmp(type, "node") == 0 && nodes.find(memberId) != nodes.end()) {
+				currentRelation.relations.push_back(std::make_pair(&nodes[memberId], role));
+			}
+			else if (strcmp(type, "way") == 0 && ways.find(memberId) != ways.end()) {
+				currentRelation.relations.push_back(std::make_pair(&ways[memberId], role));
+			}
+			else if (strcmp(type, "relation") == 0 && relations.find(memberId) != relations.end()) {
+				currentRelation.relations.push_back(std::make_pair(&relations[memberId], role));
+			}
+		}
+
+		relations[std::stoull(relationId)] = currentRelation;
+	}
+
 
 	return true;
 }
