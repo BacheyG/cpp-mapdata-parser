@@ -39,6 +39,7 @@ public:
 	STRING kindDetail;
 	STRING name;
 	int area;
+	int height;
 };
 
 struct FFeature {

@@ -12,13 +12,13 @@
 #include <unordered_map>
 #include <string>
 
-bool MapDataUtils::ProcessMapDataFromGeoJson(const STRING& mapDataJson, FTileMapData* parsedMapData, int32_t tileX, int32_t tileY)
+bool MapDataUtils::ProcessMapDataFromGeoJson(const STRING& mapDataJson, FTileMapData* parsedMapData, int32_t tileX, int32_t tileY, int32_t zoom)
 {
 	if (EMPTY(mapDataJson)) {
 		return false;
 	}
-	LatLong tileCornerLow = TileUtils::TileToLatLong(tileX, tileY, 16);
-	LatLong tileCornerHigh = TileUtils::TileToLatLong(tileX + 1, tileY + 1, 16);
+	LatLong tileCornerLow = TileUtils::TileToLatLong(tileX, tileY, zoom);
+	LatLong tileCornerHigh = TileUtils::TileToLatLong(tileX + 1, tileY + 1, zoom);
 
 	TileData inputData(tileCornerLow, tileCornerHigh, mapDataJson);
 	JsonParserState parser;
@@ -36,7 +36,7 @@ bool MapDataUtils::ProcessMapDataFromGeoJson(const STRING& mapDataJson, FTileMap
 	return true;
 }
 
-bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData* parsedMapData, int32_t tileX, int32_t tileY) 
+bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData* parsedMapData, int32_t tileX, int32_t tileY, int32_t zoom)
 {
 	tinyxml2::XMLDocument doc;
 	tinyxml2::XMLError error = doc.Parse(CSTRINGOF(mapDataOsm));
@@ -44,6 +44,14 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 	if (error != tinyxml2::XML_SUCCESS) {
 		return false;
 	}
+
+	if (parsedMapData == nullptr) {
+		return false;
+	}
+
+	LatLong tileCornerLow = TileUtils::TileToLatLong(tileX, tileY, zoom);
+	LatLong tileCornerHigh = TileUtils::TileToLatLong(tileX + 1, tileY + 1, zoom);
+
 	// ID to LatLong coordinates
 	typedef std::unordered_map<uint64_t, OsmNode> NodeCache;
 	typedef std::unordered_map<uint64_t, OsmWay> WayCache;
@@ -56,19 +64,19 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 	tinyxml2::XMLElement* root = doc.RootElement();
 
 	// Cache all nodes
-	for (tinyxml2::XMLElement* node = root->FirstChildElement("node"); node != nullptr; node = node->NextSiblingElement("node")) {
-		const char* nodeId = node->Attribute("id");
-		const char* lat = node->Attribute("lat");
-		const char* lon = node->Attribute("lon");
+	for (tinyxml2::XMLElement* xmlNodeElement = root->FirstChildElement("node"); xmlNodeElement != nullptr; xmlNodeElement = xmlNodeElement->NextSiblingElement("node")) {
+		const char* nodeId = xmlNodeElement->Attribute("id");
+		const char* lat = xmlNodeElement->Attribute("lat");
+		const char* lon = xmlNodeElement->Attribute("lon");
 		nodes[std::stoull(nodeId)] = OsmNode(LatLong(std::stod(lat), std::stod(lon)));
 	}
 
 	// Cache all ways
-	for (tinyxml2::XMLElement* way = root->FirstChildElement("way"); way != nullptr; way = way->NextSiblingElement("way")) {
-		const char* wayId = way->Attribute("id");
+	for (tinyxml2::XMLElement* xmlWayElement = root->FirstChildElement("way"); xmlWayElement != nullptr; xmlWayElement = xmlWayElement->NextSiblingElement("way")) {
+		const char* wayId = xmlWayElement->Attribute("id");
 		std::vector<OsmNode*> nodeReferences;
 		// For each 'nd' (node reference) element inside this way
-		for (tinyxml2::XMLElement* nd = way->FirstChildElement("nd"); nd != nullptr; nd = nd->NextSiblingElement("nd")) {
+		for (tinyxml2::XMLElement* nd = xmlWayElement->FirstChildElement("nd"); nd != nullptr; nd = nd->NextSiblingElement("nd")) {
 			const char* ref = nd->Attribute("ref");  // 'ref' is the node ID
 			uint64_t nodeId = std::stoull(ref);
 
@@ -82,11 +90,11 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 	}
 
 	// Cache all relations
-	for (tinyxml2::XMLElement* xmlRelationNode = root->FirstChildElement("relation"); xmlRelationNode != nullptr; xmlRelationNode = xmlRelationNode->NextSiblingElement("relation")) {
-		const char* relationId = xmlRelationNode->Attribute("id");
+	for (tinyxml2::XMLElement* xmlRelationElement = root->FirstChildElement("relation"); xmlRelationElement != nullptr; xmlRelationElement = xmlRelationElement->NextSiblingElement("relation")) {
+		const char* relationId = xmlRelationElement->Attribute("id");
 		OsmRelation currentRelation;
 		// For each 'member' (node reference) element inside this way
-		for (tinyxml2::XMLElement* member = xmlRelationNode->FirstChildElement("member"); member != nullptr; member = member->NextSiblingElement("member")) {
+		for (tinyxml2::XMLElement* member = xmlRelationElement->FirstChildElement("member"); member != nullptr; member = member->NextSiblingElement("member")) {
 			const char* type = member->Attribute("type");
 			const char* ref = member->Attribute("ref");
 			const char* role = member->Attribute("role");
@@ -107,6 +115,27 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 		relations[std::stoull(relationId)] = currentRelation;
 	}
 
+	FMapLayer layer = FMapLayer();
+	for (const auto& osmWay : ways) {
+		FFeature* building = new FFeature();
+		ADD(layer.features, building);
+		building->geometry = FFeatureGeometry();
+		ADD(building->geometry.shapes, FShape());
+		FShape& currentShape = building->geometry.shapes[SIZE(building->geometry.shapes) - 1];
+		for (const auto& node : osmWay.second.nodes) {
+			FCoordinate coordinate;
+			coordinate.latitude = node->coordinate.latitude;
+			coordinate.longitude = node->coordinate.longitude;
+			coordinate.localPosition.X = GetRangeMappedValue(coordinate.longitude,
+				tileCornerLow.longitude,
+				tileCornerLow.longitude);
+			coordinate.localPosition.Y = GetRangeMappedValue(coordinate.latitude,
+				tileCornerLow.latitude,
+				tileCornerLow.latitude);
+			ADD(currentShape.coordinates, coordinate);
+		}
+	}
+	parsedMapData->buildings = layer;
 
 	return true;
 }

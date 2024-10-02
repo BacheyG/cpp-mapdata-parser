@@ -22,8 +22,8 @@ int main() {
     }
     exampleFile.close();
 
-    FTileMapData parsedTile;
-    MapDataUtils::ProcessMapDataFromGeoJson(jsonContent, &parsedTile, 36232, 22913);
+    FTileMapData parsedTileFromJson;
+    MapDataUtils::ProcessMapDataFromGeoJson(jsonContent, &parsedTileFromJson, 36232, 22913, 16);
 
     std::wifstream osmExampleFile("../data/example.osm");
     std::wstringstream osmContent;
@@ -33,8 +33,8 @@ int main() {
     osmExampleFile.close();
 
     std::wstring contentString = osmContent.str();
-
-    MapDataUtils::ProcessMapDataFromOsm(wstringToString(contentString), &parsedTile, 36232, 22913);
+    FTileMapData parsedTileFromOsm;
+    MapDataUtils::ProcessMapDataFromOsm(wstringToString(contentString), &parsedTileFromOsm, 36232, 22913, 16);
 
     return 0;
 }
