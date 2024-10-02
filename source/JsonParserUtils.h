@@ -3,18 +3,18 @@
 #include "ShapeUtils.h"
 #include "FTileMapData.h"
 
+static void SeekToValue(const STRING& input, int& i) {
+	while (i < LENGTH(input) && (isspace(input[i]) || input[i] == ':')) {
+		++i;
+	}
+}
+
 template<typename T>
 static void TryParseValueFor(const STRING& itemNameToParse, T& target, const STRING& foundKey, const TileData& inputData, int32_t& i, void (*parseFunction)(const TileData&, int&, T&)) {
 	if (foundKey == itemNameToParse) {
 		++i;
 		SeekToValue(inputData.mapDataJson, i);
 		parseFunction(inputData, i, target);
-	}
-}
-
-static void SeekToValue(const STRING& input, int& i) {
-	while (i < LENGTH(input) && (isspace(input[i]) || input[i] == ':')) {
-		++i;
 	}
 }
 

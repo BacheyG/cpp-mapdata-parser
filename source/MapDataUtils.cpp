@@ -82,11 +82,11 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 	}
 
 	// Cache all relations
-	for (tinyxml2::XMLElement* relation = root->FirstChildElement("relation"); relation != nullptr; relation = relation->NextSiblingElement("relation")) {
-		const char* relationId = relation->Attribute("id");
+	for (tinyxml2::XMLElement* xmlRelationNode = root->FirstChildElement("relation"); xmlRelationNode != nullptr; xmlRelationNode = xmlRelationNode->NextSiblingElement("relation")) {
+		const char* relationId = xmlRelationNode->Attribute("id");
 		OsmRelation currentRelation;
 		// For each 'member' (node reference) element inside this way
-		for (tinyxml2::XMLElement* member = relation->FirstChildElement("member"); member != nullptr; member = member->NextSiblingElement("member")) {
+		for (tinyxml2::XMLElement* member = xmlRelationNode->FirstChildElement("member"); member != nullptr; member = member->NextSiblingElement("member")) {
 			const char* type = member->Attribute("type");
 			const char* ref = member->Attribute("ref");
 			const char* role = member->Attribute("role");
