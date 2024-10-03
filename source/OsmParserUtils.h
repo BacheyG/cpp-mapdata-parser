@@ -1,11 +1,19 @@
 #pragma once
 
-#include "LatLong.h"
-
 #include <string>
+#include <unordered_map>
 #include <vector>
 
-struct OsmComponent {};
+#include "LatLong.h"
+#include "tinyxml2.h"
+
+namespace Osm {
+
+struct OsmComponent {
+	std::unordered_map<std::string, std::string> tags;
+	void AddTags(tinyxml2::XMLElement* source);
+	bool IsBuilding() const;
+};
 
 struct OsmNode : public OsmComponent {
 	OsmNode() {}
@@ -22,3 +30,5 @@ struct OsmWay : public OsmComponent {
 struct OsmRelation : public OsmComponent {
 	std::vector<std::pair<OsmComponent*, std::string>> relations;
 };
+
+}

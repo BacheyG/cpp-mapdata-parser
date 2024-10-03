@@ -38,6 +38,7 @@ bool MapDataUtils::ProcessMapDataFromGeoJson(const STRING& mapDataJson, FTileMap
 
 bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData* parsedMapData, int32_t tileX, int32_t tileY, int32_t zoom)
 {
+	using namespace Osm;
 	tinyxml2::XMLDocument doc;
 	tinyxml2::XMLError error = doc.Parse(CSTRINGOF(mapDataOsm));
 
@@ -68,7 +69,9 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 		const char* nodeId = xmlNodeElement->Attribute("id");
 		const char* lat = xmlNodeElement->Attribute("lat");
 		const char* lon = xmlNodeElement->Attribute("lon");
-		nodes[std::stoull(nodeId)] = OsmNode(LatLong(std::stod(lat), std::stod(lon)));
+		OsmNode currentNode = OsmNode(LatLong(std::stod(lat), std::stod(lon)));
+		currentNode.AddTags(xmlNodeElement);
+		nodes[std::stoull(nodeId)] = currentNode;
 	}
 
 	// Cache all ways
@@ -86,7 +89,9 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 			}
 		}
 
-		ways[std::stoull(wayId)] = OsmWay(nodeReferences);
+		OsmWay currentWay = OsmWay(nodeReferences);
+		currentWay.AddTags(xmlWayElement);
+		ways[std::stoull(wayId)] = currentWay;
 	}
 
 	// Cache all relations
@@ -112,30 +117,35 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 			}
 		}
 
+		currentRelation.AddTags(xmlRelationElement);
 		relations[std::stoull(relationId)] = currentRelation;
 	}
 
-	FMapLayer layer = FMapLayer();
+	FMapLayer buildingLayer = FMapLayer();
+	FMapLayer waterLayer = FMapLayer();
+
 	for (const auto& osmWay : ways) {
-		FFeature* building = new FFeature();
-		ADD(layer.features, building);
-		building->geometry = FFeatureGeometry();
-		ADD(building->geometry.shapes, FShape());
-		FShape& currentShape = building->geometry.shapes[SIZE(building->geometry.shapes) - 1];
-		for (const auto& node : osmWay.second.nodes) {
-			FCoordinate coordinate;
-			coordinate.latitude = node->coordinate.latitude;
-			coordinate.longitude = node->coordinate.longitude;
-			coordinate.localPosition.X = GetRangeMappedValue(coordinate.longitude,
-				tileCornerLow.longitude,
-				tileCornerHigh.longitude);
-			coordinate.localPosition.Y = GetRangeMappedValue(coordinate.latitude,
-				tileCornerHigh.latitude,
-				tileCornerLow.latitude);
-			ADD(currentShape.coordinates, coordinate);
+		if (osmWay.second.IsBuilding()) {
+			FFeature* building = new FFeature();
+			ADD(buildingLayer.features, building);
+			building->geometry = FFeatureGeometry();
+			ADD(building->geometry.shapes, FShape());
+			FShape& currentShape = building->geometry.shapes[SIZE(building->geometry.shapes) - 1];
+			for (const auto& node : osmWay.second.nodes) {
+				FCoordinate coordinate;
+				coordinate.latitude = node->coordinate.latitude;
+				coordinate.longitude = node->coordinate.longitude;
+				coordinate.localPosition.X = GetRangeMappedValue(coordinate.longitude,
+					tileCornerLow.longitude,
+					tileCornerHigh.longitude);
+				coordinate.localPosition.Y = GetRangeMappedValue(coordinate.latitude,
+					tileCornerHigh.latitude,
+					tileCornerLow.latitude);
+				ADD(currentShape.coordinates, coordinate);
+			}
 		}
 	}
-	parsedMapData->buildings = layer;
+	parsedMapData->buildings = buildingLayer;
 
 	return true;
 }
