@@ -53,14 +53,8 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 	LatLong tileCornerLow = TileUtils::TileToLatLong(tileX, tileY, zoom);
 	LatLong tileCornerHigh = TileUtils::TileToLatLong(tileX + 1, tileY + 1, zoom);
 
-	// ID to LatLong coordinates
-	typedef std::unordered_map<uint64_t, OsmNode> NodeCache;
-	typedef std::unordered_map<uint64_t, OsmWay> WayCache;
-	typedef std::unordered_map<uint64_t, OsmRelation> RelationCache;
 
-	NodeCache nodes;
-	WayCache ways;
-	RelationCache relations;
+	OsmCache osmCache;
 
 	tinyxml2::XMLElement* root = doc.RootElement();
 
@@ -71,7 +65,7 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 		const char* lon = xmlNodeElement->Attribute("lon");
 		OsmNode currentNode = OsmNode(LatLong(std::stod(lat), std::stod(lon)));
 		currentNode.AddTags(xmlNodeElement);
-		nodes[std::stoull(nodeId)] = currentNode;
+		osmCache.nodes[std::stoull(nodeId)] = currentNode;
 	}
 
 	// Cache all ways
@@ -84,14 +78,14 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 			uint64_t nodeId = std::stoull(ref);
 
 			// Check if the node exists in the cached nodes
-			if (nodes.find(nodeId) != nodes.end()) {
-				nodeReferences.push_back(&(nodes[nodeId]));  // Add the LatLong of the node to the vector
+			if (osmCache.nodes.find(nodeId) != osmCache.nodes.end()) {
+				nodeReferences.push_back(&(osmCache.nodes[nodeId]));  // Add the LatLong of the node to the vector
 			}
 		}
 
 		OsmWay currentWay = OsmWay(nodeReferences);
 		currentWay.AddTags(xmlWayElement);
-		ways[std::stoull(wayId)] = currentWay;
+		osmCache.ways[std::stoull(wayId)] = currentWay;
 	}
 
 	// Cache all relations
@@ -106,43 +100,41 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 			uint64_t memberId = std::stoull(ref);
 
 			// Check if the node exists in the cached nodes
-			if (strcmp(type, "node") == 0 && nodes.find(memberId) != nodes.end()) {
-				currentRelation.relations.push_back(std::make_pair(&nodes[memberId], role));
+			if (strcmp(type, "node") == 0 && osmCache.nodes.find(memberId) != osmCache.nodes.end()) {
+				currentRelation.relations.push_back(std::make_pair(&osmCache.nodes[memberId], role));
 			}
-			else if (strcmp(type, "way") == 0 && ways.find(memberId) != ways.end()) {
-				currentRelation.relations.push_back(std::make_pair(&ways[memberId], role));
+			else if (strcmp(type, "way") == 0 && osmCache.ways.find(memberId) != osmCache.ways.end()) {
+				currentRelation.relations.push_back(std::make_pair(&osmCache.ways[memberId], role));
 			}
-			else if (strcmp(type, "relation") == 0 && relations.find(memberId) != relations.end()) {
-				currentRelation.relations.push_back(std::make_pair(&relations[memberId], role));
+			else if (strcmp(type, "relation") == 0 && osmCache.relations.find(memberId) != osmCache.relations.end()) {
+				currentRelation.relations.push_back(std::make_pair(&osmCache.relations[memberId], role));
 			}
 		}
 
 		currentRelation.AddTags(xmlRelationElement);
-		relations[std::stoull(relationId)] = currentRelation;
+		osmCache.relations[std::stoull(relationId)] = currentRelation;
 	}
 
 	FMapLayer buildingLayer = FMapLayer();
 	FMapLayer waterLayer = FMapLayer();
 
-	for (const auto& osmWay : ways) {
+	// Parse all the relations
+	for (const auto& osmRelation : osmCache.relations) {
+		if (osmRelation.second.IsBuilding()) {
+			FFeature* building = new FFeature();
+			ADD(buildingLayer.features, building);
+			building->geometry = FFeatureGeometry();
+			osmRelation.second.AddGeometry(building->geometry, tileCornerLow, tileCornerHigh);
+		}
+	}
+
+	// Parse all the ways
+	for (const auto& osmWay : osmCache.ways) {
 		if (osmWay.second.IsBuilding()) {
 			FFeature* building = new FFeature();
 			ADD(buildingLayer.features, building);
 			building->geometry = FFeatureGeometry();
-			ADD(building->geometry.shapes, FShape());
-			FShape& currentShape = building->geometry.shapes[SIZE(building->geometry.shapes) - 1];
-			for (const auto& node : osmWay.second.nodes) {
-				FCoordinate coordinate;
-				coordinate.latitude = node->coordinate.latitude;
-				coordinate.longitude = node->coordinate.longitude;
-				coordinate.localPosition.X = GetRangeMappedValue(coordinate.longitude,
-					tileCornerLow.longitude,
-					tileCornerHigh.longitude);
-				coordinate.localPosition.Y = GetRangeMappedValue(coordinate.latitude,
-					tileCornerHigh.latitude,
-					tileCornerLow.latitude);
-				ADD(currentShape.coordinates, coordinate);
-			}
+			osmWay.second.AddGeometry(building->geometry, tileCornerLow, tileCornerHigh);
 		}
 	}
 	parsedMapData->buildings = buildingLayer;
