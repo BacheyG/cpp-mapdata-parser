@@ -55,4 +55,16 @@ namespace Osm {
 			component.first->AddGeometry(geometry, lowerCorner, upperCorner);
 		}
 	}
+
+	void OsmRelation::AddRelation(OsmComponent* component, const std::string role) {
+		// Add to the front
+		if(role == "outer") 
+		{
+			relations.insert(relations.begin(), std::make_pair(component, role));
+		}
+		else 
+		{
+			relations.push_back(std::make_pair(component, role));
+		}
+	}
 }

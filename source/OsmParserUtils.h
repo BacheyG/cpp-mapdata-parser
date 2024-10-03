@@ -7,6 +7,8 @@
 #include "LatLong.h"
 #include "tinyxml2.h"
 
+#include <string>
+
 struct FFeatureGeometry;
 
 namespace Osm {
@@ -35,6 +37,7 @@ struct OsmWay : public OsmComponent {
 struct OsmRelation : public OsmComponent {
 	std::vector<std::pair<OsmComponent*, std::string>> relations;
 	void AddGeometry(FFeatureGeometry& shape, LatLong lowerCorner, LatLong upperCorner) const override;
+	void AddRelation(OsmComponent* component, const std::string role);
 };
 
 typedef std::unordered_map<uint64_t, OsmNode> NodeCache;

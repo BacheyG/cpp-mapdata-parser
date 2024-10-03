@@ -101,13 +101,13 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 
 			// Check if the node exists in the cached nodes
 			if (strcmp(type, "node") == 0 && osmCache.nodes.find(memberId) != osmCache.nodes.end()) {
-				currentRelation.relations.push_back(std::make_pair(&osmCache.nodes[memberId], role));
+				currentRelation.AddRelation(&osmCache.nodes[memberId], role);
 			}
 			else if (strcmp(type, "way") == 0 && osmCache.ways.find(memberId) != osmCache.ways.end()) {
-				currentRelation.relations.push_back(std::make_pair(&osmCache.ways[memberId], role));
+				currentRelation.AddRelation(&osmCache.ways[memberId], role);
 			}
 			else if (strcmp(type, "relation") == 0 && osmCache.relations.find(memberId) != osmCache.relations.end()) {
-				currentRelation.relations.push_back(std::make_pair(&osmCache.relations[memberId], role));
+				currentRelation.AddRelation(&osmCache.relations[memberId], role);
 			}
 		}
 
