@@ -34,7 +34,7 @@ int main() {
 
     std::wstring contentString = osmContent.str();
     FTileMapData parsedTileFromOsm;
-    MapDataUtils::ProcessMapDataFromOsm(wstringToString(contentString), &parsedTileFromOsm, 36232, 22913, 16);
+    MapDataUtils::ProcessMapDataFromOsm(wstringToString(contentString), &parsedTileFromOsm, 9058, 5728, 14);
 
     return 0;
 }

@@ -128,9 +128,9 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 			coordinate.longitude = node->coordinate.longitude;
 			coordinate.localPosition.X = GetRangeMappedValue(coordinate.longitude,
 				tileCornerLow.longitude,
-				tileCornerLow.longitude);
+				tileCornerHigh.longitude);
 			coordinate.localPosition.Y = GetRangeMappedValue(coordinate.latitude,
-				tileCornerLow.latitude,
+				tileCornerHigh.latitude,
 				tileCornerLow.latitude);
 			ADD(currentShape.coordinates, coordinate);
 		}

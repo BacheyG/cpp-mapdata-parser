@@ -50,5 +50,7 @@
 
 template<typename T>
 T GetRangeMappedValue(T value, T min, T max) {
-	return (max - value) / (max - min);
+	T denominator = (max - min);
+	if (denominator == 0) return min;
+	return (max - value) / denominator;
 }
