@@ -13,24 +13,64 @@ public:
 	const STRING& mapDataJson;
 };
 
-struct FCoordinate {
+enum EGeometryType {
+	Node,
+	Line,
+	Polygon,
+	Composite
+};
+
+struct FLine;
+
+struct FGeometry {
 public:
-	FCoordinate() : latitude(0), longitude(0) {}
-	double latitude;
-	double longitude;
+	EGeometryType type;
+	virtual FLine* GetMainSegment() = 0;
+	virtual ARRAY<FLine*> GetHoleSegments() = 0;
+	virtual int GetComponentCount() { return 1; }
+	virtual ~FGeometry() = default;
+};
+
+struct FCoordinate : public FGeometry {
+public:
+	FCoordinate() : latitudeLongitude(0, 0) {}
+	FLine* GetMainSegment() override { return nullptr; } // Invalid, a single node may not have segment
+	ARRAY<FLine*> GetHoleSegments() override { return ARRAY<FLine*>() ; } // Invalid, a single node may not have holes
+	LatLong latitudeLongitude;
 	VECTOR2D localPosition;
 };
 
-struct FShape {
+struct FLine : public FGeometry {
 public:
 	ARRAY<FCoordinate> coordinates;
-	bool orientation; // true: clockwise, false: counterclockwise
+	bool isClosed; //for closed ways, e.g. simple buildings or areas
+
+	FLine* GetMainSegment() override { return this; } // This shape is the outer segment itself
+	ARRAY<FLine*> GetHoleSegments() override { return ARRAY<FLine*>(); } // A FLine will not have any holes
 };
 
-struct FFeatureGeometry {
+struct FPolygon : public FGeometry {
 public:
-	STRING type;
-	ARRAY<FShape> shapes;
+	FLine outerShape;
+	ARRAY<FLine*> innerShapes;
+
+	FLine* GetMainSegment() override { return &outerShape; }
+	ARRAY<FLine*> GetHoleSegments() override { return innerShapes; }
+};
+
+struct FCompositeGeometry : public FGeometry {
+public:
+	ARRAY<FGeometry*> geometries;
+
+	FGeometry* GetActiveGeometry() {
+		return geometries[CurrentIndex];
+	}
+	FLine* GetMainSegment() override { return GetActiveGeometry()->GetMainSegment(); }
+	ARRAY<FLine*> GetHoleSegments() override { return GetActiveGeometry()->GetHoleSegments(); }
+	int GetComponentCount() { return geometries.size(); }
+	void SetGeometryIndex(int index) { CurrentIndex = index; }
+private:
+	int CurrentIndex = 0;
 };
 
 struct FProperties {
@@ -45,7 +85,7 @@ public:
 struct FFeature {
 public:
 	STRING type;
-	FFeatureGeometry geometry;
+	FGeometry* geometry;
 	FProperties properties;
 };
 

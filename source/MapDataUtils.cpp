@@ -123,8 +123,7 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 		if (osmRelation.second.IsBuilding()) {
 			FFeature* building = new FFeature();
 			ADD(buildingLayer.features, building);
-			building->geometry = FFeatureGeometry();
-			osmRelation.second.AddGeometry(building->geometry, tileCornerLow, tileCornerHigh);
+			building->geometry = osmRelation.second.CreateGeometry(tileCornerLow, tileCornerHigh);
 		}
 	}
 
@@ -133,8 +132,7 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 		if (osmWay.second.IsBuilding()) {
 			FFeature* building = new FFeature();
 			ADD(buildingLayer.features, building);
-			building->geometry = FFeatureGeometry();
-			osmWay.second.AddGeometry(building->geometry, tileCornerLow, tileCornerHigh);
+			building->geometry = osmWay.second.CreateGeometry(tileCornerLow, tileCornerHigh);	
 		}
 	}
 	parsedMapData->buildings = buildingLayer;

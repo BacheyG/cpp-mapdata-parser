@@ -4,6 +4,6 @@
 
 namespace ShapeUtils {
 
-void CalculateShapeOrientation(FShape& shape);
+//void CalculateShapeOrientation(FShape& shape);
 
 }

@@ -27,7 +27,6 @@ int main() {
     FTileMapData parsedTileFromJson;
     MapDataUtils::ProcessMapDataFromGeoJson(jsonContent, &parsedTileFromJson, 36232, 22913, 16);
 
-
     std::cout << "OSM data read BEGIN" << std::endl;
     std::wifstream osmExampleFile("../data/example.osm");
     std::wstringstream osmContent;

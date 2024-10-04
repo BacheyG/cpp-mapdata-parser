@@ -11,49 +11,49 @@ namespace Osm {
 			const char* key = tag->Attribute("k");
 			const char* value = tag->Attribute("v");
 
-			if(key != nullptr && value != nullptr) {
+			if (key != nullptr && value != nullptr) {
 				tags[key] = value;
 			}
 		}
 	}
 
 	bool OsmComponent::IsBuilding() const {
-		return tags.find("building") != tags.end();
+		return tags.find("building") != tags.end() || tags.find("building:part") != tags.end();
 	}
 
 	static void PopulateCoordinate(FCoordinate& coordinate, LatLong input, LatLong lowerCorner, LatLong upperCorner) {
-		coordinate.latitude = input.latitude;
-		coordinate.longitude = input.longitude;
-		coordinate.localPosition.X = GetRangeMappedValue(coordinate.longitude,
+		coordinate.latitudeLongitude = input;
+		coordinate.localPosition.X = GetRangeMappedValue(coordinate.latitudeLongitude.longitude,
 			lowerCorner.longitude,
 			upperCorner.longitude);
-		coordinate.localPosition.Y = GetRangeMappedValue(coordinate.latitude,
+		coordinate.localPosition.Y = GetRangeMappedValue(coordinate.latitudeLongitude.latitude,
 			upperCorner.latitude,
 			lowerCorner.latitude);
 	}
 
-	void OsmNode::AddGeometry(FFeatureGeometry& geometry, LatLong lowerCorner, LatLong upperCorner) const {
-			FCoordinate fCoordinate;
-			PopulateCoordinate(fCoordinate, coordinate, lowerCorner, upperCorner);
-			ADD(geometry.shapes, FShape());
-			FShape& currentShape = geometry.shapes[SIZE(geometry.shapes) - 1];
-			ADD(currentShape.coordinates, fCoordinate);
+	FGeometry* OsmNode::CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const {
+		FCoordinate* fCoordinate = new FCoordinate();
+		PopulateCoordinate(*fCoordinate, coordinate, lowerCorner, upperCorner);
+		return fCoordinate;
 	}
 
-	void OsmWay::AddGeometry(FFeatureGeometry& geometry, LatLong lowerCorner, LatLong upperCorner) const {
-		ADD(geometry.shapes, FShape());
-		FShape& currentShape = geometry.shapes[SIZE(geometry.shapes) - 1];
+	FGeometry* OsmWay::CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const {
+		FLine* fLine = new FLine();
 		for (const auto& node : this->nodes) {
 			FCoordinate fCoordinate;
 			PopulateCoordinate(fCoordinate, node->coordinate, lowerCorner, upperCorner);
-			ADD(currentShape.coordinates, fCoordinate);
+			ADD(fLine->coordinates, fCoordinate);
 		}
+		return fLine;
 	}
 
-	void OsmRelation::AddGeometry(FFeatureGeometry& geometry, LatLong lowerCorner, LatLong upperCorner) const {
+	FGeometry* OsmRelation::CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const {
+		FCompositeGeometry* compositeGeometry = new FCompositeGeometry();
 		for (const auto& component : this->relations) {
-			component.first->AddGeometry(geometry, lowerCorner, upperCorner);
+			FGeometry* child = component.first->CreateGeometry(lowerCorner, upperCorner);
+			ADD(compositeGeometry->geometries, child);
 		}
+		return compositeGeometry;
 	}
 
 	void OsmRelation::AddRelation(OsmComponent* component, const std::string role) {

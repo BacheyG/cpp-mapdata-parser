@@ -112,44 +112,44 @@ private:
 	char _previousCharacter;
 };
 
-static void ParseShapes(const TileData& inputData, int32_t& i, ARRAY<FShape>& shapes) {
+static void ParseShapes(const TileData& inputData, int32_t& i, ARRAY<FGeometry*>& shapes) {
 	JsonParserState parser;
-	FShape currentShape;
+	FLine* currentShape = new FLine;
 	int32_t maxArrayDepth = 0;
 	while (i < LENGTH(inputData.mapDataJson)) {
 		parser.UpdateState(inputData.mapDataJson[i]);
 		maxArrayDepth = MAX(parser.GetArrayDepth(), maxArrayDepth);
 		if (maxArrayDepth == 3 && parser.GetArrayDepth() == 1 && inputData.mapDataJson[i] == ']') {
 			ADD(shapes, currentShape);
-			ShapeUtils::CalculateShapeOrientation(currentShape);
-			currentShape = FShape();
+			//ShapeUtils::CalculateShapeOrientation(currentShape);
+			currentShape = new FLine();
 		}
 		if (IsNumber(inputData.mapDataJson[i])) {
 			FCoordinate coordinate;
-			ParseNumber<double>(inputData, i, coordinate.longitude);
+			ParseNumber<double>(inputData, i, coordinate.latitudeLongitude.longitude);
 			++i;
 			SeekToNextCoordinate(inputData.mapDataJson, i);
-			ParseNumber<double>(inputData, i, coordinate.latitude);
-			coordinate.localPosition.X = GetRangeMappedValue(coordinate.longitude,
+			ParseNumber<double>(inputData, i, coordinate.latitudeLongitude.latitude);
+			coordinate.localPosition.X = GetRangeMappedValue(coordinate.latitudeLongitude.longitude,
 				inputData.lowerCorner.longitude,
 				inputData.upperCorner.longitude);
-			coordinate.localPosition.Y = GetRangeMappedValue(coordinate.latitude,
+			coordinate.localPosition.Y = GetRangeMappedValue(coordinate.latitudeLongitude.latitude,
 				inputData.lowerCorner.latitude,
 				inputData.upperCorner.latitude);
-			ADD(currentShape.coordinates, coordinate);
+			ADD(currentShape->coordinates, coordinate);
 		}
 		if (parser.IsInValidState()) {
 			break;
 		}
 		i += 1;
 	}
-	if (!EMPTY(currentShape.coordinates)) {
-		ShapeUtils::CalculateShapeOrientation(currentShape);
+	if (!EMPTY(currentShape->coordinates)) {
+		//ShapeUtils::CalculateShapeOrientation(currentShape);
 		ADD(shapes, currentShape);
 	}
 }
 
-static void ParseGeometry(const TileData& inputData, int32_t& i, FFeatureGeometry& geometry) {
+static void ParseGeometry(const TileData& inputData, int32_t& i, FGeometry& geometry) {
 	JsonParserState parser;
 	while (i < LENGTH(inputData.mapDataJson)) {
 		parser.UpdateState(inputData.mapDataJson[i]);
@@ -158,8 +158,8 @@ static void ParseGeometry(const TileData& inputData, int32_t& i, FFeatureGeometr
 			parser.FlipIsInString();
 			STRING foundKey;
 			ParseString(inputData, i, foundKey);
-			TryParseValueFor<STRING>("type", geometry.type, foundKey, inputData, i, ParseString);
-			TryParseValueFor<ARRAY<FShape>>("coordinates", geometry.shapes, foundKey, inputData, i, ParseShapes);
+			//TryParseValueFor<STRING>("type", geometry.type, foundKey, inputData, i, ParseString);
+			//TryParseValueFor<ARRAY<FShape>>("coordinates", geometry.shapes, foundKey, inputData, i, ParseShapes);
 		}
 		if (parser.IsInValidState()) {
 			break;
@@ -198,7 +198,7 @@ static void ParseFeature(const TileData& inputData, int32_t& i, FFeature& featur
 			parser.FlipIsInString();
 			STRING foundKey;
 			ParseString(inputData, i, foundKey);
-			TryParseValueFor<FFeatureGeometry>("geometry", feature.geometry, foundKey, inputData, i, ParseGeometry);
+			//TryParseValueFor<FFeatureGeometry>("geometry", feature.geometry, foundKey, inputData, i, ParseGeometry);
 			TryParseValueFor<FProperties>("properties", feature.properties, foundKey, inputData, i, ParseProperties);
 		}
 		if (parser.IsInValidState()) {
