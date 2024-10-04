@@ -31,13 +31,13 @@ namespace Osm {
 			lowerCorner.latitude);
 	}
 
-	FGeometry* OsmNode::CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const {
+	FMapGeometry* OsmNode::CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const {
 		FCoordinate* fCoordinate = new FCoordinate();
 		PopulateCoordinate(*fCoordinate, coordinate, lowerCorner, upperCorner);
 		return fCoordinate;
 	}
 
-	FGeometry* OsmWay::CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const {
+	FMapGeometry* OsmWay::CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const {
 		FLine* fLine = new FLine();
 		for (const auto& node : this->nodes) {
 			FCoordinate fCoordinate;
@@ -47,10 +47,10 @@ namespace Osm {
 		return fLine;
 	}
 
-	FGeometry* OsmRelation::CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const {
+	FMapGeometry* OsmRelation::CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const {
 		FCompositeGeometry* compositeGeometry = new FCompositeGeometry();
 		for (const auto& component : this->relations) {
-			FGeometry* child = component.first->CreateGeometry(lowerCorner, upperCorner);
+			FMapGeometry* child = component.first->CreateGeometry(lowerCorner, upperCorner);
 			ADD(compositeGeometry->geometries, child);
 		}
 		return compositeGeometry;

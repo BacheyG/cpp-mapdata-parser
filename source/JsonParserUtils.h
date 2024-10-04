@@ -112,7 +112,7 @@ private:
 	char _previousCharacter;
 };
 
-static void ParseShapes(const TileData& inputData, int32_t& i, ARRAY<FGeometry*>& shapes) {
+static void ParseShapes(const TileData& inputData, int32_t& i, ARRAY<FMapGeometry*>& shapes) {
 	JsonParserState parser;
 	FLine* currentShape = new FLine;
 	int32_t maxArrayDepth = 0;
@@ -149,7 +149,7 @@ static void ParseShapes(const TileData& inputData, int32_t& i, ARRAY<FGeometry*>
 	}
 }
 
-static void ParseGeometry(const TileData& inputData, int32_t& i, FGeometry& geometry) {
+static void ParseGeometry(const TileData& inputData, int32_t& i, FMapGeometry& geometry) {
 	JsonParserState parser;
 	while (i < LENGTH(inputData.mapDataJson)) {
 		parser.UpdateState(inputData.mapDataJson[i]);

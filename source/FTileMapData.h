@@ -22,16 +22,16 @@ enum EGeometryType {
 
 struct FLine;
 
-struct FGeometry {
+struct FMapGeometry {
 public:
 	EGeometryType type;
 	virtual FLine* GetMainSegment() = 0;
 	virtual ARRAY<FLine*> GetHoleSegments() = 0;
 	virtual int GetComponentCount() { return 1; }
-	virtual ~FGeometry() = default;
+	virtual ~FMapGeometry() = default;
 };
 
-struct FCoordinate : public FGeometry {
+struct FCoordinate : public FMapGeometry {
 public:
 	FCoordinate() : latitudeLongitude(0, 0) {}
 	FLine* GetMainSegment() override { return nullptr; } // Invalid, a single node may not have segment
@@ -40,7 +40,7 @@ public:
 	VECTOR2D localPosition;
 };
 
-struct FLine : public FGeometry {
+struct FLine : public FMapGeometry {
 public:
 	ARRAY<FCoordinate> coordinates;
 	bool isClosed; //for closed ways, e.g. simple buildings or areas
@@ -49,7 +49,7 @@ public:
 	ARRAY<FLine*> GetHoleSegments() override { return ARRAY<FLine*>(); } // A FLine will not have any holes
 };
 
-struct FPolygon : public FGeometry {
+struct FPolygon : public FMapGeometry {
 public:
 	FLine outerShape;
 	ARRAY<FLine*> innerShapes;
@@ -58,11 +58,11 @@ public:
 	ARRAY<FLine*> GetHoleSegments() override { return innerShapes; }
 };
 
-struct FCompositeGeometry : public FGeometry {
+struct FCompositeGeometry : public FMapGeometry {
 public:
-	ARRAY<FGeometry*> geometries;
+	ARRAY<FMapGeometry*> geometries;
 
-	FGeometry* GetActiveGeometry() {
+	FMapGeometry* GetActiveGeometry() {
 		return geometries[CurrentIndex];
 	}
 	FLine* GetMainSegment() override { return GetActiveGeometry()->GetMainSegment(); }
@@ -85,7 +85,7 @@ public:
 struct FFeature {
 public:
 	STRING type;
-	FGeometry* geometry;
+	FMapGeometry* geometry;
 	FProperties properties;
 };
 
