@@ -67,7 +67,7 @@ public:
 	}
 	FLine* GetMainSegment() override { return GetActiveGeometry()->GetMainSegment(); }
 	ARRAY<FLine*> GetHoleSegments() override { return GetActiveGeometry()->GetHoleSegments(); }
-	int GetComponentCount() { return geometries.size(); }
+	int GetComponentCount() { return SIZE(geometries); }
 	void SetGeometryIndex(int index) { CurrentIndex = index; }
 private:
 	int CurrentIndex = 0;
