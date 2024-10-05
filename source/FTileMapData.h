@@ -44,6 +44,8 @@ struct FLine : public FMapGeometry {
 public:
 	ARRAY<FCoordinate> coordinates;
 	bool isClosed; //for closed ways, e.g. simple buildings or areas
+	bool isClockwise;
+	FCoordinate& GetCoordinate(int i) { return isClockwise ? coordinates[i] : coordinates[SIZE(coordinates) - 1 - i]; }
 	FLine* GetMainSegment() override { return this; } // This shape is the outer segment itself
 	ARRAY<FLine*> GetHoleSegments() override { return ARRAY<FLine*>(); } // A FLine will not have any holes
 };

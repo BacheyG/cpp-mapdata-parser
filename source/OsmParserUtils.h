@@ -15,6 +15,9 @@ namespace Osm {
 
 struct OsmWay;
 struct MultigonCache {
+	MultigonCache() {
+		outerSegments = std::vector<std::pair<OsmWay*, bool>>(); innerSegments = std::vector<OsmWay*>();
+	}
 	std::vector<std::pair<OsmWay*, bool>> outerSegments; // Holds the IDs of outer ways
 	std::vector<OsmWay*> innerSegments; // Holds the IDs of inner ways
 };

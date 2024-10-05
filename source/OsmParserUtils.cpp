@@ -53,9 +53,7 @@ namespace Osm {
 			PopulateCoordinate(fCoordinate, node->coordinate, lowerCorner, upperCorner);
 			ADD(fLine->coordinates, fCoordinate);
 		}
-		if (!ShapeUtils::CalculateShapeOrientation(fLine)) {
-			REVERSE(fLine->coordinates);
-		}
+		fLine->isClockwise = ShapeUtils::CalculateShapeOrientation(fLine);
 		return fLine;
 	}
 
@@ -78,9 +76,7 @@ namespace Osm {
 						ADD(fLine->coordinates, fCoordinate);
 					}
 				}
-				if (!ShapeUtils::CalculateShapeOrientation(fLine)) {
-					REVERSE(fLine->coordinates);
-				}
+				fLine->isClockwise = ShapeUtils::CalculateShapeOrientation(fLine);
 			}
 			polygon->outerShape = fLine;
 			return polygon;
@@ -148,10 +144,11 @@ namespace Osm {
 			OsmWay* start = startIt->second.Get();
 			startIt->second.currentId++;
 
-			auto asd = outerEndNodeMap.find(start->GetEndNodeId());
-			asd->second.currentId++;
+			auto endIt = outerEndNodeMap.find(start->GetEndNodeId());
+			endIt->second.currentId++;
 			OsmWay* current = start;
 			bool isCurrentReversed = false; // Assume first item is not reversed
+			UE_LOG(LogTemp, Log, TEXT("[BEGIN MATCHING] START NODE: %lu END NODE: %lu"), current->GetStartNodeId(), current->GetEndNodeId());
 			while (true) {
 				multigonCache.outerSegments.push_back(std::make_pair(current, isCurrentReversed));
 				uint64_t nextStartNodeId = isCurrentReversed ? current->GetStartNodeId() : current->GetEndNodeId();
@@ -174,7 +171,8 @@ namespace Osm {
 				uint64_t nextEndNodeId = isCurrentReversed ? current->GetStartNodeId() : current->GetEndNodeId();
 				auto newEnd = isCurrentReversed ? outerStartNodeMap.find(nextEndNodeId) : outerEndNodeMap.find(nextEndNodeId);
 				newEnd->second.currentId++;
-				UE_LOG(LogTemp, Log, TEXT("START NODE: %lu END NODE: %lu"), nextStartNodeId, nextEndNodeId);
+				UE_LOG(LogTemp, Log, TEXT("START NODE: %lu END NODE: %lu %s"), nextStartNodeId, nextEndNodeId, isCurrentReversed ? TEXT("REVERSED") : TEXT(""));
+
 			}
 			// TODO take care of excluded outers
 			// TODO take care of the inners (later)
