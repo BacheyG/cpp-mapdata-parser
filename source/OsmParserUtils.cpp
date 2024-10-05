@@ -98,14 +98,20 @@ namespace Osm {
 	void OsmRelation::PrecomputeMultigonRelations() {
 		if (isMultigon) {
 			// Index to map node IDs to ways for faster searching
-			std::unordered_map<int, OsmWay*> outerStartNodeMap;
+			std::unordered_map<int, std::pair<OsmWay*, bool>> outerStartNodeMap;
 
 			// First, fill in the maps with outer ways
 			for (auto& currentMember : relations) {
 				if (currentMember.second == "outer") {
 					OsmWay* outerWay = dynamic_cast<OsmWay*>(currentMember.first);
 					if (outerWay != nullptr) {
-						outerStartNodeMap[outerWay->GetStartNodeId()] = outerWay;
+						auto sameId = outerStartNodeMap.find(outerWay->GetStartNodeId());
+						if (sameId == outerStartNodeMap.end()) {
+							outerStartNodeMap[outerWay->GetStartNodeId()] = std::make_pair(outerWay, false);
+						}
+						else {
+							outerStartNodeMap[outerWay->GetEndNodeId()] = std::make_pair(outerWay, true);
+						}
 					}
 				}
 			}
@@ -114,19 +120,19 @@ namespace Osm {
 			auto startIt = outerStartNodeMap.begin();
 			if (startIt == outerStartNodeMap.end()) return; // No outer segments found
 
-			OsmWay* start = startIt->second;
-			int startNodeId = start->GetStartNodeId(); // Store start node ID for comparison
+			OsmWay* start = startIt->second.first;
 			OsmWay* current = start;
-			bool isReversed = false;
+			bool isReversed = startIt->second.second;
 			while (true) {
 				multigonCache.outerSegments.push_back(std::make_pair(current, isReversed));
-				auto nextItem = outerStartNodeMap.find(current->GetEndNodeId());
+				auto nextItem = outerStartNodeMap.find(isReversed ? current->GetStartNodeId() : current->GetEndNodeId());
 				if (nextItem == outerStartNodeMap.end()) {
 					break; // We finished early?
 				}
-				current = nextItem->second;
+				current = nextItem->second.first;
+				isReversed = nextItem->second.second; // Update the reversed state
 				if (current == start) {
-					break; // We went around, good
+					break; // Completed a full loop
 				}
 			}
 			// TODO take care of excluded outers
