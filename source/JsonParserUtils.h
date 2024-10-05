@@ -177,8 +177,8 @@ static void ParseProperties(const TileData& inputData, int32_t& i, FProperties& 
 			parser.FlipIsInString();
 			STRING foundKey;
 			ParseString(inputData, i, foundKey);
-			TryParseValueFor<STRING>("kind", properties.kind, foundKey, inputData, i, ParseString);
-			TryParseValueFor<STRING>("kind_detail", properties.kindDetail, foundKey, inputData, i, ParseString);
+			//TryParseValueFor<STRING>("kind", properties.kind, foundKey, inputData, i, ParseString);
+			//TryParseValueFor<STRING>("kind_detail", properties.kindDetail, foundKey, inputData, i, ParseString);
 			TryParseValueFor<STRING>("name", properties.name, foundKey, inputData, i, ParseString);
 			TryParseValueFor<int32_t>("area", properties.area, foundKey, inputData, i, ParseNumber<int32_t>);
 		}

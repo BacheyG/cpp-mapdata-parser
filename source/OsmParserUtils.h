@@ -13,6 +13,12 @@ struct FMapGeometry;
 
 namespace Osm {
 
+struct OsmWay;
+struct MultigonCache {
+	std::vector<std::pair<OsmWay*, bool>> outerSegments; // Holds the IDs of outer ways
+	std::vector<OsmWay*> innerSegments; // Holds the IDs of inner ways
+};
+
 struct OsmComponent {
 	std::unordered_map<std::string, std::string> tags;
 	void AddTags(tinyxml2::XMLElement* source);
@@ -21,15 +27,18 @@ struct OsmComponent {
 };
 
 struct OsmNode : public OsmComponent {
-	OsmNode() {}
-	OsmNode(const LatLong& c) { coordinate = c; }
+	OsmNode() : id(0) {}
+	OsmNode(const LatLong& c) : id(0) { coordinate = c; }
 	LatLong coordinate;
+	uint64_t id;
 	FMapGeometry* CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const override;
 };
 
 struct OsmWay : public OsmComponent {
 	OsmWay() {}
 	OsmWay(const std::vector<OsmNode*>& n) { nodes = n; }
+	uint64_t GetStartNodeId() const;
+	uint64_t GetEndNodeId() const;
 	std::vector<OsmNode*> nodes;
 	FMapGeometry* CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const override;
 };
@@ -38,15 +47,22 @@ struct OsmRelation : public OsmComponent {
 	std::vector<std::pair<OsmComponent*, std::string>> relations;
 	FMapGeometry* CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const override;
 	void AddRelation(OsmComponent* component, const std::string role);
+	void PrecomputeMultigonRelations();
+	bool isMultigon = false;
+	MultigonCache multigonCache;
 };
 
-typedef std::unordered_map<uint64_t, OsmNode> NodeCache;
-typedef std::unordered_map<uint64_t, OsmWay> WayCache;
-typedef std::unordered_map<uint64_t, OsmRelation> RelationCache;
+typedef std::unordered_map<uint64_t, OsmComponent*> OsmItemsCache;
 
 struct OsmCache {
-	NodeCache nodes;
-	WayCache ways;
-	RelationCache relations;
+	OsmItemsCache nodes;
+	OsmItemsCache ways;
+	OsmItemsCache relations;
+
+	OsmItemsCache::iterator current;
+
+	OsmItemsCache::iterator First();
+	OsmItemsCache::iterator Last();
+	OsmItemsCache::iterator GetNext();
 };
 }

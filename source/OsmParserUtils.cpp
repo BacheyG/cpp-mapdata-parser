@@ -37,6 +37,14 @@ namespace Osm {
 		return fCoordinate;
 	}
 
+	uint64_t OsmWay::GetStartNodeId() const {
+		return nodes.front()->id;
+	}
+
+	uint64_t OsmWay::GetEndNodeId() const {
+		return nodes.back()->id;
+	}
+
 	FMapGeometry* OsmWay::CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const {
 		FLine* fLine = new FLine();
 		for (const auto& node : this->nodes) {
@@ -48,23 +56,101 @@ namespace Osm {
 	}
 
 	FMapGeometry* OsmRelation::CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const {
-		FCompositeGeometry* compositeGeometry = new FCompositeGeometry();
-		for (const auto& component : this->relations) {
-			FMapGeometry* child = component.first->CreateGeometry(lowerCorner, upperCorner);
-			ADD(compositeGeometry->geometries, child);
+		if (isMultigon) {
+			FPolygon* polygon = new FPolygon();
+			FLine* fLine = new FLine();
+			for (const auto& segment : this->multigonCache.outerSegments) {
+				if (segment.second) { // Is reversed?
+					for (auto nodeIterator = segment.first->nodes.rbegin(); nodeIterator != segment.first->nodes.rend(); ++nodeIterator) {
+						FCoordinate fCoordinate;
+						PopulateCoordinate(fCoordinate, (*nodeIterator)->coordinate, lowerCorner, upperCorner);
+						ADD(fLine->coordinates, fCoordinate);
+					}
+				} else {
+					for (OsmNode* node : segment.first->nodes) {
+						FCoordinate fCoordinate;
+						PopulateCoordinate(fCoordinate, node->coordinate, lowerCorner, upperCorner);
+						ADD(fLine->coordinates, fCoordinate);
+					}
+				}
+			}
+			polygon->outerShape = fLine;
+			return polygon;
 		}
-		return compositeGeometry;
+		else {
+			FCompositeGeometry* compositeGeometry = new FCompositeGeometry();
+			for (const auto& component : this->relations) {
+				FMapGeometry* child = component.first->CreateGeometry(lowerCorner, upperCorner);
+				ADD(compositeGeometry->geometries, child);
+			}
+			return compositeGeometry;
+		}
 	}
 
 	void OsmRelation::AddRelation(OsmComponent* component, const std::string role) {
 		// Add to the front
-		if(role == "outer") 
-		{
-			relations.insert(relations.begin(), std::make_pair(component, role));
+		if (role == "outer" || role == "inner") {
+			isMultigon = true;
 		}
-		else 
-		{
-			relations.push_back(std::make_pair(component, role));
+		relations.push_back(std::make_pair(component, role));
+	}
+
+	void OsmRelation::PrecomputeMultigonRelations() {
+		if (isMultigon) {
+			// Index to map node IDs to ways for faster searching
+			std::unordered_map<int, OsmWay*> outerStartNodeMap;
+
+			// First, fill in the maps with outer ways
+			for (auto& currentMember : relations) {
+				if (currentMember.second == "outer") {
+					OsmWay* outerWay = dynamic_cast<OsmWay*>(currentMember.first);
+					if (outerWay != nullptr) {
+						outerStartNodeMap[outerWay->GetStartNodeId()] = outerWay;
+					}
+				}
+			}
+
+			// Use an iterator to find the first outer way
+			auto startIt = outerStartNodeMap.begin();
+			if (startIt == outerStartNodeMap.end()) return; // No outer segments found
+
+			OsmWay* start = startIt->second;
+			int startNodeId = start->GetStartNodeId(); // Store start node ID for comparison
+			OsmWay* current = start;
+			bool isReversed = false;
+			while (true) {
+				multigonCache.outerSegments.push_back(std::make_pair(current, isReversed));
+				auto nextItem = outerStartNodeMap.find(current->GetEndNodeId());
+				if (nextItem == outerStartNodeMap.end()) {
+					break; // We finished early?
+				}
+				current = nextItem->second;
+				if (current == start) {
+					break; // We went around, good
+				}
+			}
+			// TODO take care of excluded outers
+			// TODO take care of the inners (later)
 		}
+	}
+
+	OsmItemsCache::iterator OsmCache::First() {
+		current = relations.begin();
+		return current;
+	}
+
+	OsmItemsCache::iterator OsmCache::Last() {
+		return nodes.end();
+	}
+
+	OsmItemsCache::iterator OsmCache::GetNext() {
+		++current;
+		if (current == relations.end()) {
+			current = ways.begin();
+		}
+		if (current == ways.end()) {
+			current = nodes.begin();
+		}
+		return current;
 	}
 }

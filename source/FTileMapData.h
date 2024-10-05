@@ -51,10 +51,10 @@ public:
 
 struct FPolygon : public FMapGeometry {
 public:
-	FLine outerShape;
+	FLine* outerShape;
 	ARRAY<FLine*> innerShapes;
 
-	FLine* GetMainSegment() override { return &outerShape; }
+	FLine* GetMainSegment() override { return outerShape; }
 	ARRAY<FLine*> GetHoleSegments() override { return innerShapes; }
 };
 
@@ -75,9 +75,8 @@ private:
 
 struct FProperties {
 public:
-	STRING kind;
-	STRING kindDetail;
 	STRING name;
+	int64_t id;
 	int area;
 	int height;
 };
