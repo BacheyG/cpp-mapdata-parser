@@ -72,7 +72,8 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 
 	// Cache all ways
 	for (tinyxml2::XMLElement* xmlWayElement = root->FirstChildElement("way"); xmlWayElement != nullptr; xmlWayElement = xmlWayElement->NextSiblingElement("way")) {
-		const char* wayId = xmlWayElement->Attribute("id");
+		const char* wayIdString = xmlWayElement->Attribute("id");
+		uint64_t wayId = std::stoull(wayIdString);
 		std::vector<OsmNode*> nodeReferences;
 		// For each 'nd' (node reference) element inside this way
 		for (tinyxml2::XMLElement* nd = xmlWayElement->FirstChildElement("nd"); nd != nullptr; nd = nd->NextSiblingElement("nd")) {
@@ -87,13 +88,16 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 
 		OsmWay* currentWay = new OsmWay(nodeReferences);
 		currentWay->AddTags(xmlWayElement);
-		osmCache.ways[std::stoull(wayId)] = currentWay;
+		currentWay->id = wayId;
+		osmCache.ways[wayId] = currentWay;
 	}
 
 	// Cache all relations
 	for (tinyxml2::XMLElement* xmlRelationElement = root->FirstChildElement("relation"); xmlRelationElement != nullptr; xmlRelationElement = xmlRelationElement->NextSiblingElement("relation")) {
-		const char* relationId = xmlRelationElement->Attribute("id");
+		const char* relationIdString = xmlRelationElement->Attribute("id");
+		uint64_t relationId = std::stoull(relationIdString);
 		OsmRelation* currentRelation = new OsmRelation;
+		currentRelation->id = relationId;
 		// For each 'member' (node reference) element inside this way
 		for (tinyxml2::XMLElement* member = xmlRelationElement->FirstChildElement("member"); member != nullptr; member = member->NextSiblingElement("member")) {
 			const char* type = member->Attribute("type");
@@ -114,7 +118,7 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 		}
 		currentRelation->PrecomputeMultigonRelations();
 		currentRelation->AddTags(xmlRelationElement);
-		osmCache.relations[std::stoull(relationId)] = currentRelation;
+		osmCache.relations[relationId] = currentRelation;
 	}
 
 	FMapLayer buildingLayer = FMapLayer();

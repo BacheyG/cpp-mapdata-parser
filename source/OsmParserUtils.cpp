@@ -2,6 +2,7 @@
 #include "OsmParserUtils.h"
 
 #include "FTileMapData.h"
+#include "ShapeUtils.h"
 #include "type_defines.h"
 
 namespace Osm {
@@ -52,6 +53,9 @@ namespace Osm {
 			PopulateCoordinate(fCoordinate, node->coordinate, lowerCorner, upperCorner);
 			ADD(fLine->coordinates, fCoordinate);
 		}
+		if (!ShapeUtils::CalculateShapeOrientation(fLine)) {
+			REVERSE(fLine->coordinates);
+		}
 		return fLine;
 	}
 
@@ -66,12 +70,16 @@ namespace Osm {
 						PopulateCoordinate(fCoordinate, (*nodeIterator)->coordinate, lowerCorner, upperCorner);
 						ADD(fLine->coordinates, fCoordinate);
 					}
-				} else {
+				}
+				else {
 					for (OsmNode* node : segment.first->nodes) {
 						FCoordinate fCoordinate;
 						PopulateCoordinate(fCoordinate, node->coordinate, lowerCorner, upperCorner);
 						ADD(fLine->coordinates, fCoordinate);
 					}
+				}
+				if (!ShapeUtils::CalculateShapeOrientation(fLine)) {
+					REVERSE(fLine->coordinates);
 				}
 			}
 			polygon->outerShape = fLine;
@@ -95,23 +103,40 @@ namespace Osm {
 		relations.push_back(std::make_pair(component, role));
 	}
 
+	struct DirectionCache {
+		std::vector<OsmWay*> next;
+		uint64_t currentId = 0;
+
+		OsmWay* Get() {
+			if (currentId < next.size()) {
+				return next[currentId];
+			}
+			return nullptr;
+		}
+	};
+
 	void OsmRelation::PrecomputeMultigonRelations() {
 		if (isMultigon) {
 			// Index to map node IDs to ways for faster searching
-			std::unordered_map<int, std::pair<OsmWay*, bool>> outerStartNodeMap;
+			std::unordered_map<uint64_t, DirectionCache> outerStartNodeMap;
+			std::unordered_map<uint64_t, DirectionCache> outerEndNodeMap;
 
 			// First, fill in the maps with outer ways
 			for (auto& currentMember : relations) {
 				if (currentMember.second == "outer") {
 					OsmWay* outerWay = dynamic_cast<OsmWay*>(currentMember.first);
 					if (outerWay != nullptr) {
-						auto sameId = outerStartNodeMap.find(outerWay->GetStartNodeId());
-						if (sameId == outerStartNodeMap.end()) {
-							outerStartNodeMap[outerWay->GetStartNodeId()] = std::make_pair(outerWay, false);
+						auto sameStartExists = outerStartNodeMap.find(outerWay->GetStartNodeId());
+						auto sameEndExists = outerEndNodeMap.find(outerWay->GetEndNodeId());
+
+						if (sameStartExists == outerStartNodeMap.end()) {
+							outerStartNodeMap[outerWay->GetStartNodeId()] = DirectionCache();
 						}
-						else {
-							outerStartNodeMap[outerWay->GetEndNodeId()] = std::make_pair(outerWay, true);
+						if (sameEndExists == outerEndNodeMap.end()) {
+							outerEndNodeMap[outerWay->GetEndNodeId()] = DirectionCache();
 						}
+						outerStartNodeMap[outerWay->GetStartNodeId()].next.push_back(outerWay);
+						outerEndNodeMap[outerWay->GetEndNodeId()].next.push_back(outerWay);
 					}
 				}
 			}
@@ -120,20 +145,36 @@ namespace Osm {
 			auto startIt = outerStartNodeMap.begin();
 			if (startIt == outerStartNodeMap.end()) return; // No outer segments found
 
-			OsmWay* start = startIt->second.first;
+			OsmWay* start = startIt->second.Get();
+			startIt->second.currentId++;
+
+			auto asd = outerEndNodeMap.find(start->GetEndNodeId());
+			asd->second.currentId++;
 			OsmWay* current = start;
-			bool isReversed = startIt->second.second;
+			bool isCurrentReversed = false; // Assume first item is not reversed
 			while (true) {
-				multigonCache.outerSegments.push_back(std::make_pair(current, isReversed));
-				auto nextItem = outerStartNodeMap.find(isReversed ? current->GetStartNodeId() : current->GetEndNodeId());
-				if (nextItem == outerStartNodeMap.end()) {
-					break; // We finished early?
+				multigonCache.outerSegments.push_back(std::make_pair(current, isCurrentReversed));
+				uint64_t nextStartNodeId = isCurrentReversed ? current->GetStartNodeId() : current->GetEndNodeId();
+				auto newStart = outerStartNodeMap.find(nextStartNodeId);
+				if (newStart == outerStartNodeMap.end()) {
+					newStart = outerEndNodeMap.find(nextStartNodeId);
+					if (newStart == outerEndNodeMap.end()) {
+						break; // We finished early?
+					}
+					isCurrentReversed = true;
 				}
-				current = nextItem->second.first;
-				isReversed = nextItem->second.second; // Update the reversed state
-				if (current == start) {
+				else {
+					isCurrentReversed = false;
+				}
+				current = newStart->second.Get();
+				newStart->second.currentId++;
+				if (current == nullptr || current == start) {
 					break; // Completed a full loop
 				}
+				uint64_t nextEndNodeId = isCurrentReversed ? current->GetStartNodeId() : current->GetEndNodeId();
+				auto newEnd = isCurrentReversed ? outerStartNodeMap.find(nextEndNodeId) : outerEndNodeMap.find(nextEndNodeId);
+				newEnd->second.currentId++;
+				UE_LOG(LogTemp, Log, TEXT("START NODE: %lu END NODE: %lu"), nextStartNodeId, nextEndNodeId);
 			}
 			// TODO take care of excluded outers
 			// TODO take care of the inners (later)

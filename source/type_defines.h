@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "MathUtil.h"
+#include "Algo/Reverse.h"
 
 #define STRING FString
 #define CSTRINGOF(x) StringCast<ANSICHAR>(*(x)).Get()
@@ -17,6 +18,7 @@
 #define SIZE(x) x.Num()
 #define ADD(x, y) x.Add(y)
 #define VECTOR2D FVector2D
+#define REVERSE(x) Algo::Reverse(x);
 
 #define MAX FMath::Max
 #define MAP_PI TMathUtilConstants<double>::Pi

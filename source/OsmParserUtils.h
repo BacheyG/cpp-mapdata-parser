@@ -23,14 +23,14 @@ struct OsmComponent {
 	std::unordered_map<std::string, std::string> tags;
 	void AddTags(tinyxml2::XMLElement* source);
 	bool IsBuilding() const;
+	uint64_t id = 0;
 	virtual FMapGeometry* CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const = 0;
 };
 
 struct OsmNode : public OsmComponent {
-	OsmNode() : id(0) {}
-	OsmNode(const LatLong& c) : id(0) { coordinate = c; }
+	OsmNode() {}
+	OsmNode(const LatLong& c) { coordinate = c; }
 	LatLong coordinate;
-	uint64_t id;
 	FMapGeometry* CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const override;
 };
 
