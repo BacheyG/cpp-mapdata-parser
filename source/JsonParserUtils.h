@@ -125,15 +125,15 @@ static void ParseShapes(const TileData& inputData, int32_t& i, ARRAY<FMapGeometr
 			currentShape = new FLine();
 		}
 		if (IsNumber(inputData.mapDataJson[i])) {
-			FCoordinate coordinate;
-			ParseNumber<double>(inputData, i, coordinate.latitudeLongitude.longitude);
+			FCoordinate* coordinate;
+			ParseNumber<double>(inputData, i, coordinate->globalPosition.longitude);
 			++i;
 			SeekToNextCoordinate(inputData.mapDataJson, i);
-			ParseNumber<double>(inputData, i, coordinate.latitudeLongitude.latitude);
-			coordinate.localPosition.X = GetRangeMappedValue(coordinate.latitudeLongitude.longitude,
+			ParseNumber<double>(inputData, i, coordinate->globalPosition.latitude);
+			coordinate->localPosition.X = GetRangeMappedValue(coordinate->globalPosition.longitude,
 				inputData.lowerCorner.longitude,
 				inputData.upperCorner.longitude);
-			coordinate.localPosition.Y = GetRangeMappedValue(coordinate.latitudeLongitude.latitude,
+			coordinate->localPosition.Y = GetRangeMappedValue(coordinate->globalPosition.latitude,
 				inputData.lowerCorner.latitude,
 				inputData.upperCorner.latitude);
 			ADD(currentShape->coordinates, coordinate);

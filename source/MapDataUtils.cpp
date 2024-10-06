@@ -74,7 +74,7 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 	for (tinyxml2::XMLElement* xmlWayElement = root->FirstChildElement("way"); xmlWayElement != nullptr; xmlWayElement = xmlWayElement->NextSiblingElement("way")) {
 		const char* wayIdString = xmlWayElement->Attribute("id");
 		uint64_t wayId = std::stoull(wayIdString);
-		std::vector<OsmNode*> nodeReferences;
+		ARRAY<OsmNode*> nodeReferences;
 		// For each 'nd' (node reference) element inside this way
 		for (tinyxml2::XMLElement* nd = xmlWayElement->FirstChildElement("nd"); nd != nullptr; nd = nd->NextSiblingElement("nd")) {
 			const char* ref = nd->Attribute("ref");  // 'ref' is the node ID
@@ -82,7 +82,7 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 
 			// Check if the node exists in the cached nodes
 			if (osmCache.nodes.find(nodeId) != osmCache.nodes.end()) {
-				nodeReferences.push_back(dynamic_cast<OsmNode*>(osmCache.nodes[nodeId]));  // Add the LatLong of the node to the vector
+				ADD(nodeReferences, dynamic_cast<OsmNode*>(osmCache.nodes[nodeId]));  // Add the LatLong of the node to the vector
 			}
 		}
 
@@ -116,8 +116,8 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 				currentRelation->AddRelation(osmCache.relations[memberId], role);
 			}
 		}
-		currentRelation->PrecomputeMultigonRelations();
 		currentRelation->AddTags(xmlRelationElement);
+		currentRelation->PrecomputeMultigonRelations();
 		osmCache.relations[relationId] = currentRelation;
 	}
 

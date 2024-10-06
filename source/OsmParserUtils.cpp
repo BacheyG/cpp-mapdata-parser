@@ -4,6 +4,7 @@
 #include "FTileMapData.h"
 #include "ShapeUtils.h"
 #include "type_defines.h"
+#include <unordered_set>
 
 namespace Osm {
 
@@ -22,34 +23,34 @@ namespace Osm {
 		return tags.find("building") != tags.end() || tags.find("building:part") != tags.end();
 	}
 
-	static void PopulateCoordinate(FCoordinate& coordinate, LatLong input, LatLong lowerCorner, LatLong upperCorner) {
-		coordinate.latitudeLongitude = input;
-		coordinate.localPosition.X = GetRangeMappedValue(coordinate.latitudeLongitude.longitude,
+	static void PopulateCoordinate(FCoordinate* coordinate, LatLong input, LatLong lowerCorner, LatLong upperCorner) {
+		coordinate->globalPosition = input;
+		coordinate->localPosition.X = GetRangeMappedValue(coordinate->globalPosition.longitude,
 			lowerCorner.longitude,
 			upperCorner.longitude);
-		coordinate.localPosition.Y = GetRangeMappedValue(coordinate.latitudeLongitude.latitude,
+		coordinate->localPosition.Y = GetRangeMappedValue(coordinate->globalPosition.latitude,
 			upperCorner.latitude,
 			lowerCorner.latitude);
 	}
 
 	FMapGeometry* OsmNode::CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const {
 		FCoordinate* fCoordinate = new FCoordinate();
-		PopulateCoordinate(*fCoordinate, coordinate, lowerCorner, upperCorner);
+		PopulateCoordinate(fCoordinate, coordinate, lowerCorner, upperCorner);
 		return fCoordinate;
 	}
 
 	uint64_t OsmWay::GetStartNodeId() const {
-		return nodes.front()->id;
+		return nodes[0]->id;
 	}
 
 	uint64_t OsmWay::GetEndNodeId() const {
-		return nodes.back()->id;
+		return nodes[SIZE(nodes) - 1]->id;
 	}
 
 	FMapGeometry* OsmWay::CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const {
 		FLine* fLine = new FLine();
 		for (const auto& node : this->nodes) {
-			FCoordinate fCoordinate;
+			FCoordinate* fCoordinate = new FCoordinate();
 			PopulateCoordinate(fCoordinate, node->coordinate, lowerCorner, upperCorner);
 			ADD(fLine->coordinates, fCoordinate);
 		}
@@ -61,19 +62,28 @@ namespace Osm {
 		if (isMultigon) {
 			FPolygon* polygon = new FPolygon();
 			FLine* fLine = new FLine();
-			for (const auto& segment : this->multigonCache.outerSegments) {
+			uint64_t lastAddedNodeId = 0;
+
+			for (int i = 0; i < SIZE(this->multigonCache.outerSegments); ++i) {
+				auto& segment = this->multigonCache.outerSegments[i];
 				if (segment.second) { // Is reversed?
 					for (auto nodeIterator = segment.first->nodes.rbegin(); nodeIterator != segment.first->nodes.rend(); ++nodeIterator) {
-						FCoordinate fCoordinate;
-						PopulateCoordinate(fCoordinate, (*nodeIterator)->coordinate, lowerCorner, upperCorner);
-						ADD(fLine->coordinates, fCoordinate);
+						if ((*nodeIterator)->id != lastAddedNodeId) {
+							FCoordinate* fCoordinate = new FCoordinate();
+							PopulateCoordinate(fCoordinate, (*nodeIterator)->coordinate, lowerCorner, upperCorner);
+							ADD(fLine->coordinates, fCoordinate);
+							lastAddedNodeId = (*nodeIterator)->id;
+						}
 					}
 				}
 				else {
 					for (OsmNode* node : segment.first->nodes) {
-						FCoordinate fCoordinate;
-						PopulateCoordinate(fCoordinate, node->coordinate, lowerCorner, upperCorner);
-						ADD(fLine->coordinates, fCoordinate);
+						if (node->id != lastAddedNodeId) {
+							FCoordinate* fCoordinate = new FCoordinate();
+							PopulateCoordinate(fCoordinate, node->coordinate, lowerCorner, upperCorner);
+							ADD(fLine->coordinates, fCoordinate);
+							lastAddedNodeId = node->id;
+						}
 					}
 				}
 				fLine->isClockwise = ShapeUtils::CalculateShapeOrientation(fLine);
@@ -96,86 +106,73 @@ namespace Osm {
 		if (role == "outer" || role == "inner") {
 			isMultigon = true;
 		}
-		relations.push_back(std::make_pair(component, role));
+		ADD(relations, std::make_pair(component, role));
 	}
-
-	struct DirectionCache {
-		std::vector<OsmWay*> next;
-		uint64_t currentId = 0;
-
-		OsmWay* Get() {
-			if (currentId < next.size()) {
-				return next[currentId];
-			}
-			return nullptr;
-		}
-	};
 
 	void OsmRelation::PrecomputeMultigonRelations() {
 		if (isMultigon) {
 			// Index to map node IDs to ways for faster searching
-			std::unordered_map<uint64_t, DirectionCache> outerStartNodeMap;
-			std::unordered_map<uint64_t, DirectionCache> outerEndNodeMap;
+			std::unordered_set<OsmWay*> segmentCache;
 
-			// First, fill in the maps with outer ways
+			// First, fill in the cache set of all possible outer ways
 			for (auto& currentMember : relations) {
 				if (currentMember.second == "outer") {
 					OsmWay* outerWay = dynamic_cast<OsmWay*>(currentMember.first);
 					if (outerWay != nullptr) {
-						auto sameStartExists = outerStartNodeMap.find(outerWay->GetStartNodeId());
-						auto sameEndExists = outerEndNodeMap.find(outerWay->GetEndNodeId());
-
-						if (sameStartExists == outerStartNodeMap.end()) {
-							outerStartNodeMap[outerWay->GetStartNodeId()] = DirectionCache();
-						}
-						if (sameEndExists == outerEndNodeMap.end()) {
-							outerEndNodeMap[outerWay->GetEndNodeId()] = DirectionCache();
-						}
-						outerStartNodeMap[outerWay->GetStartNodeId()].next.push_back(outerWay);
-						outerEndNodeMap[outerWay->GetEndNodeId()].next.push_back(outerWay);
+						segmentCache.insert(outerWay);
 					}
 				}
 			}
-
-			// Use an iterator to find the first outer way
-			auto startIt = outerStartNodeMap.begin();
-			if (startIt == outerStartNodeMap.end()) return; // No outer segments found
-
-			OsmWay* start = startIt->second.Get();
-			startIt->second.currentId++;
-
-			auto endIt = outerEndNodeMap.find(start->GetEndNodeId());
-			endIt->second.currentId++;
-			OsmWay* current = start;
-			bool isCurrentReversed = false; // Assume first item is not reversed
-			UE_LOG(LogTemp, Log, TEXT("[BEGIN MATCHING] START NODE: %lu END NODE: %lu"), current->GetStartNodeId(), current->GetEndNodeId());
+			// Begin the algorithm with an outer way
+			const auto& startIterator = segmentCache.begin();
+			OsmWay* startWay = *startIterator;
+			if (startIterator == segmentCache.end()) return; // No outer segments found
+			OsmWay* currentWay = startWay;
+			bool isReversed = false;
+			ADD(multigonCache.outerSegments, std::make_pair(currentWay, isReversed));
+			segmentCache.erase(startIterator);
+			LOG_F("[BEGIN MATCHING] START NODE: %lu END NODE: %lu", currentWay->GetStartNodeId(), currentWay->GetEndNodeId());
+			
+			// In my solution, we keep iterating in the cache looking for a next segment until we create a closed loop or we
+			// are out of way segments.
+			// We also take into account if the segment is reversed or not.
 			while (true) {
-				multigonCache.outerSegments.push_back(std::make_pair(current, isCurrentReversed));
-				uint64_t nextStartNodeId = isCurrentReversed ? current->GetStartNodeId() : current->GetEndNodeId();
-				auto newStart = outerStartNodeMap.find(nextStartNodeId);
-				if (newStart == outerStartNodeMap.end()) {
-					newStart = outerEndNodeMap.find(nextStartNodeId);
-					if (newStart == outerEndNodeMap.end()) {
-						break; // We finished early?
-					}
-					isCurrentReversed = true;
-				}
-				else {
-					isCurrentReversed = false;
-				}
-				current = newStart->second.Get();
-				newStart->second.currentId++;
-				if (current == nullptr || current == start) {
-					break; // Completed a full loop
-				}
-				uint64_t nextEndNodeId = isCurrentReversed ? current->GetStartNodeId() : current->GetEndNodeId();
-				auto newEnd = isCurrentReversed ? outerStartNodeMap.find(nextEndNodeId) : outerEndNodeMap.find(nextEndNodeId);
-				newEnd->second.currentId++;
-				UE_LOG(LogTemp, Log, TEXT("START NODE: %lu END NODE: %lu %s"), nextStartNodeId, nextEndNodeId, isCurrentReversed ? TEXT("REVERSED") : TEXT(""));
+				uint64_t currentIdToMatch = isReversed ? currentWay->GetStartNodeId() : currentWay->GetEndNodeId();
 
+				// We got back matching on the start way
+				if (currentIdToMatch == startWay->GetStartNodeId()) {
+					LOG("[END MATCHING] Returned to start.");
+					break;
+				}
+				for (auto cacheIterator = segmentCache.begin(); cacheIterator != segmentCache.end(); ++cacheIterator) {
+					if ((*cacheIterator)->GetStartNodeId() == currentIdToMatch) {
+						isReversed = false;
+						currentWay = (*cacheIterator);
+						ADD(multigonCache.outerSegments, std::make_pair(currentWay, isReversed));
+						segmentCache.erase(cacheIterator++);
+						LOG_F("START NODE: %lu END NODE: %lu", currentWay->GetStartNodeId(), currentWay->GetEndNodeId());
+
+						break;
+					}
+					else if ((*cacheIterator)->GetEndNodeId() == currentIdToMatch) {
+						isReversed = true;
+						currentWay = (*cacheIterator);
+						ADD(multigonCache.outerSegments, std::make_pair(currentWay, isReversed));
+						segmentCache.erase(cacheIterator++);
+						LOG_F("START NODE: %lu END NODE: %lu REVERSED", currentWay->GetStartNodeId(), currentWay->GetEndNodeId());
+
+						break;
+					}
+				}
+
+				if (segmentCache.empty()) {
+					LOG("[END MATCHING] Cache is now empty.");
+					break;
+				}
 			}
-			// TODO take care of excluded outers
-			// TODO take care of the inners (later)
+
+			// TODO take care of outers still remaining in the cache set. They are likely separate islands, handle them as well.
+			// TODO take care of the inners (later), should be easy, because they don't seem to be separated to segments.
 		}
 	}
 

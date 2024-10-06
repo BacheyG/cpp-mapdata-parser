@@ -6,6 +6,7 @@
 
 #include "LatLong.h"
 #include "tinyxml2.h"
+#include "type_defines.h"
 
 #include <string>
 
@@ -15,11 +16,9 @@ namespace Osm {
 
 struct OsmWay;
 struct MultigonCache {
-	MultigonCache() {
-		outerSegments = std::vector<std::pair<OsmWay*, bool>>(); innerSegments = std::vector<OsmWay*>();
-	}
-	std::vector<std::pair<OsmWay*, bool>> outerSegments; // Holds the IDs of outer ways
-	std::vector<OsmWay*> innerSegments; // Holds the IDs of inner ways
+	MultigonCache() {}
+	ARRAY<std::pair<OsmWay*, bool>> outerSegments; // Holds the IDs of outer ways
+	ARRAY<OsmWay*> innerSegments; // Holds the IDs of inner ways
 };
 
 struct OsmComponent {
@@ -39,15 +38,15 @@ struct OsmNode : public OsmComponent {
 
 struct OsmWay : public OsmComponent {
 	OsmWay() {}
-	OsmWay(const std::vector<OsmNode*>& n) { nodes = n; }
+	OsmWay(const ARRAY<OsmNode*>& n) { nodes = n; }
 	uint64_t GetStartNodeId() const;
 	uint64_t GetEndNodeId() const;
-	std::vector<OsmNode*> nodes;
+	ARRAY<OsmNode*> nodes;
 	FMapGeometry* CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const override;
 };
 
 struct OsmRelation : public OsmComponent {
-	std::vector<std::pair<OsmComponent*, std::string>> relations;
+	ARRAY<std::pair<OsmComponent*, std::string>> relations;
 	FMapGeometry* CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const override;
 	void AddRelation(OsmComponent* component, const std::string role);
 	void PrecomputeMultigonRelations();

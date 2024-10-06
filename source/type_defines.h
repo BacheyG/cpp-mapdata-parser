@@ -6,6 +6,9 @@
 #include "MathUtil.h"
 #include "Algo/Reverse.h"
 
+#define LOG(msg) UE_LOG(LogTemp, Log, TEXT(msg)) 
+#define LOG_F(fmt, ...) UE_LOG(LogTemp, Log, TEXT(fmt), __VA_ARGS__) 
+
 #define STRING FString
 #define CSTRINGOF(x) StringCast<ANSICHAR>(*(x)).Get()
 #define LENGTH(x) x.Len()
@@ -30,6 +33,9 @@
 #include <string>
 #include <vector>
 #include "math/Vector.hpp"
+
+#define LOG(fmt, ...)  printf("%s\n", fmt);
+#define LOG_F printf(fmt "\n", __VA_ARGS__);
 
 #define STRING std::string
 #define CSTRINGOF(x) x.c_str()

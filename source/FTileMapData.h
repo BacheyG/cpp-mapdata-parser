@@ -33,19 +33,19 @@ public:
 
 struct FCoordinate : public FMapGeometry {
 public:
-	FCoordinate() : latitudeLongitude(0, 0) {}
+	FCoordinate() : globalPosition(0, 0) {}
 	FLine* GetMainSegment() override { return nullptr; } // Invalid, a single node may not have segment
 	ARRAY<FLine*> GetHoleSegments() override { return ARRAY<FLine*>() ; } // Invalid, a single node may not have holes
-	LatLong latitudeLongitude;
+	LatLong globalPosition;
 	VECTOR2D localPosition;
 };
 
 struct FLine : public FMapGeometry {
 public:
-	ARRAY<FCoordinate> coordinates;
+	ARRAY<FCoordinate*> coordinates;
 	bool isClosed; //for closed ways, e.g. simple buildings or areas
 	bool isClockwise;
-	FCoordinate& GetCoordinate(int i) { return isClockwise ? coordinates[i] : coordinates[SIZE(coordinates) - 1 - i]; }
+	FCoordinate* GetCoordinate(int i) { return isClockwise ? coordinates[i] : coordinates[SIZE(coordinates) - 1 - i]; }
 	FLine* GetMainSegment() override { return this; } // This shape is the outer segment itself
 	ARRAY<FLine*> GetHoleSegments() override { return ARRAY<FLine*>(); } // A FLine will not have any holes
 };
