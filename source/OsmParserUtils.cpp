@@ -125,8 +125,8 @@ namespace Osm {
 			}
 			// Begin the algorithm with an outer way
 			const auto& startIterator = segmentCache.begin();
-			OsmWay* startWay = *startIterator;
 			if (startIterator == segmentCache.end()) return; // No outer segments found
+			OsmWay* startWay = *startIterator;
 			OsmWay* currentWay = startWay;
 			bool isReversed = false;
 			ADD(multigonCache.outerSegments, std::make_pair(currentWay, isReversed));
@@ -136,7 +136,8 @@ namespace Osm {
 			// In my solution, we keep iterating in the cache looking for a next segment until we create a closed loop or we
 			// are out of way segments.
 			// We also take into account if the segment is reversed or not.
-			while (true) {
+			int32_t maxLoop = 5000;
+			while (maxLoop-- > 0) {
 				uint64_t currentIdToMatch = isReversed ? currentWay->GetStartNodeId() : currentWay->GetEndNodeId();
 
 				// We got back matching on the start way

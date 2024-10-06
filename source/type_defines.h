@@ -34,8 +34,8 @@
 #include <vector>
 #include "math/Vector.hpp"
 
-#define LOG(fmt, ...)  printf("%s\n", fmt);
-#define LOG_F printf(fmt "\n", __VA_ARGS__);
+#define LOG(msg)  printf("%s\n", msg);
+#define LOG_F(fmt, ...)  printf(fmt "\n", __VA_ARGS__);
 
 #define STRING std::string
 #define CSTRINGOF(x) x.c_str()

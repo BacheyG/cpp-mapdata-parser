@@ -4,6 +4,6 @@
 
 namespace ShapeUtils {
 
-static bool CalculateShapeOrientation(FLine* shape);
+bool CalculateShapeOrientation(FLine* shape);
 
 }
