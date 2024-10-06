@@ -176,24 +176,4 @@ namespace Osm {
 			// TODO take care of the inners (later), should be easy, because they don't seem to be separated to segments.
 		}
 	}
-
-	OsmItemsCache::iterator OsmCache::First() {
-		current = relations.begin();
-		return current;
-	}
-
-	OsmItemsCache::iterator OsmCache::Last() {
-		return nodes.end();
-	}
-
-	OsmItemsCache::iterator OsmCache::GetNext() {
-		++current;
-		if (current == relations.end()) {
-			current = ways.begin();
-		}
-		if (current == ways.end()) {
-			current = nodes.begin();
-		}
-		return current;
-	}
 }

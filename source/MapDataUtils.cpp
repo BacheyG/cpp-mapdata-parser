@@ -36,6 +36,18 @@ bool MapDataUtils::ProcessMapDataFromGeoJson(const STRING& mapDataJson, FTileMap
 	return true;
 }
 
+static void ParseOneItem(FTileMapData* parsedMapData, Osm::OsmComponent* component, LatLong tileCornerLow, LatLong tileCornerHigh) {
+	if (component->IsBuilding()) {
+		FFeature* building = new FFeature();
+		ADD(parsedMapData->buildings.features, building);
+		building->properties.id = component->id;
+		auto heightTag = component->tags.find("height");
+		int heightValue = (heightTag != component->tags.end()) ? std::stoi(heightTag->second) : 30;
+		building->properties.height = heightValue;
+		building->geometry = component->CreateGeometry(tileCornerLow, tileCornerHigh);
+	}
+}
+
 bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData* parsedMapData, int32_t tileX, int32_t tileY, int32_t zoom)
 {
 	using namespace Osm;
@@ -121,23 +133,23 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 		osmCache.relations[relationId] = currentRelation;
 	}
 
-	FMapLayer buildingLayer = FMapLayer();
-	FMapLayer waterLayer = FMapLayer();
+	parsedMapData->buildings = FMapLayer();
 
 	// Parse everything
-	for (auto osmComponentIterator = osmCache.First(); osmComponentIterator != osmCache.Last(); osmComponentIterator = osmCache.GetNext()) 
+	for (const auto& osmItem : osmCache.relations) 
 	{
-		if (osmComponentIterator->second->IsBuilding()) {
-			FFeature* building = new FFeature();
-			ADD(buildingLayer.features, building);
-			building->properties.id = osmComponentIterator->first;
-			auto heightTag = osmComponentIterator->second->tags.find("height");
-			int heightValue = (heightTag != osmComponentIterator->second->tags.end()) ? std::stoi(heightTag->second) : 30;
-			building->properties.height = heightValue;
-			building->geometry = osmComponentIterator->second->CreateGeometry(tileCornerLow, tileCornerHigh);
-		}
+		ParseOneItem(parsedMapData, osmItem.second, tileCornerLow, tileCornerHigh);
 	}
-	parsedMapData->buildings = buildingLayer;
+
+	for (const auto& osmItem : osmCache.ways)
+	{
+		ParseOneItem(parsedMapData, osmItem.second, tileCornerLow, tileCornerHigh);
+	}
+
+	for (const auto& osmItem : osmCache.nodes)
+	{
+		ParseOneItem(parsedMapData, osmItem.second, tileCornerLow, tileCornerHigh);
+	}
 
 	return true;
 }

@@ -60,11 +60,5 @@ struct OsmCache {
 	OsmItemsCache nodes;
 	OsmItemsCache ways;
 	OsmItemsCache relations;
-
-	OsmItemsCache::iterator current;
-
-	OsmItemsCache::iterator First();
-	OsmItemsCache::iterator Last();
-	OsmItemsCache::iterator GetNext();
 };
 }
