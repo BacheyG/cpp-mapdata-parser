@@ -29,22 +29,47 @@ bool MapDataUtils::ProcessMapDataFromGeoJson(const STRING& mapDataJson, FTileMap
 			ParseString(inputData, i, foundKey);
 			parser.FlipIsInString();
 			TryParseValueFor<FMapLayer>("water", parsedMapData->water, foundKey, inputData, i, ParseLayer);
-			TryParseValueFor<FMapLayer>("buildings", parsedMapData->buildings, foundKey, inputData, i, ParseLayer);
+			//TryParseValueFor<FMapLayer>("buildings", parsedMapData->buildings, foundKey, inputData, i, ParseLayer);
 		}
 	}
 
 	return true;
 }
 
-static void ParseOneItem(FTileMapData* parsedMapData, Osm::OsmComponent* component, LatLong tileCornerLow, LatLong tileCornerHigh) {
-	if (component->IsBuilding()) {
-		FFeature* building = new FFeature();
-		ADD(parsedMapData->buildings.features, building);
-		building->properties.id = component->id;
+static void ParseOneItem(FTileMapData* parsedMapData, Osm::OsmComponent* component, LatLong tileCornerLow, LatLong tileCornerHigh) 
+{
+	static const int kDefaultLevels = 1;
+	static const int kDefaultHeightPerLevel = 30;
+
+	if (component->IsBuilding()) 
+	{
+		FBuildingData* fBuilding = new FBuildingData();
+		FBuildingProperties* buildingProperties = new FBuildingProperties();
+		fBuilding->properties = buildingProperties;
+		ADD(parsedMapData->buildings, fBuilding);
+		buildingProperties->id = component->id;
+		auto minHeightTag = component->tags.find("min-height");
 		auto heightTag = component->tags.find("height");
-		int heightValue = (heightTag != component->tags.end()) ? std::stoi(heightTag->second) : 30;
-		building->properties.height = heightValue;
-		building->geometry = component->CreateGeometry(tileCornerLow, tileCornerHigh);
+		auto levelTag = component->tags.find("levels");
+		uint32_t levelValue = (minHeightTag != component->tags.end()) ? std::stoi(heightTag->second) : 0;
+		float heightValue = (heightTag != component->tags.end()) ? std::stoi(heightTag->second) : 0;
+		uint32_t minHeightValue = (minHeightTag != component->tags.end()) ? std::stoi(minHeightTag->second) : 0;
+		if (levelValue == 0 && heightValue == 0)
+		{
+			levelValue = kDefaultLevels;
+			heightValue = kDefaultHeightPerLevel * levelValue;
+		} 
+		else if (levelValue == 0) 
+		{
+			levelValue = heightValue / kDefaultHeightPerLevel;
+		}
+		else if (heightValue == 0) 
+		{
+			heightValue = levelValue * kDefaultHeightPerLevel;
+		}
+		buildingProperties->height = heightValue;
+		buildingProperties->levels = levelValue;
+		fBuilding->geometry = component->CreateGeometry(tileCornerLow, tileCornerHigh);
 	}
 }
 
@@ -133,7 +158,7 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 		osmCache.relations[relationId] = currentRelation;
 	}
 
-	parsedMapData->buildings = FMapLayer();
+	//parsedMapData->buildings = FMapLayer();
 
 	// Parse everything
 	for (const auto& osmItem : osmCache.relations) 

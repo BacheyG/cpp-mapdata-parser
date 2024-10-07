@@ -199,7 +199,9 @@ static void ParseFeature(const TileData& inputData, int32_t& i, FFeature& featur
 			STRING foundKey;
 			ParseString(inputData, i, foundKey);
 			//TryParseValueFor<FFeatureGeometry>("geometry", feature.geometry, foundKey, inputData, i, ParseGeometry);
-			TryParseValueFor<FProperties>("properties", feature.properties, foundKey, inputData, i, ParseProperties);
+			FProperties* fProperties = new FProperties();
+			feature.properties = fProperties;
+			TryParseValueFor<FProperties>("properties", *fProperties, foundKey, inputData, i, ParseProperties);
 		}
 		if (parser.IsInValidState()) {
 			break;

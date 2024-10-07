@@ -79,14 +79,29 @@ public:
 	STRING name;
 	int64_t id;
 	int area;
+};
+
+enum BuildingKind { House, Residental, Retail, Church, Goverment, Museum  };
+enum RoofType { Flat, Hipped, Pyramidal, Dome };
+
+struct FBuildingProperties : public FProperties {
+	BuildingKind kind;
+	RoofType roofType;
+	int minHeight;
 	int height;
+	int levels;
+	int roofHeight;
+};
+
+struct FBuildingData {
+	FMapGeometry* geometry;
+	FBuildingProperties* properties;
 };
 
 struct FFeature {
 public:
-	STRING type;
 	FMapGeometry* geometry;
-	FProperties properties;
+	FProperties* properties;
 };
 
 struct FMapLayer {
@@ -99,5 +114,5 @@ struct FTileMapData
 {
 public:
 	FMapLayer water;
-	FMapLayer buildings;
+	ARRAY<FBuildingData*> buildings;
 };
