@@ -19,6 +19,10 @@ namespace Osm {
 		}
 	}
 
+	bool OsmComponent::IsPath() const {
+		return tags.find("highway") != tags.end();
+	}
+
 	bool OsmComponent::IsBuilding() const {
 		return tags.find("building") != tags.end() || tags.find("building:part") != tags.end();
 	}

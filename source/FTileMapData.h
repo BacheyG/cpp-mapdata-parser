@@ -82,7 +82,91 @@ public:
 	FMapGeometry* geometry;
 };
 
-enum class LanduseKind { Unknown, Residental, Commercial, Industrial, Military, Retail };
+enum class PathType {
+	Unknown,           // For any unrecognized path types
+	Motorway,          // highway=motorway
+	Trunk,             // highway=trunk
+	Primary,           // highway=primary
+	Secondary,         // highway=secondary
+	Tertiary,          // highway=tertiary
+	Unclassified,      // highway=unclassified
+	Residential,       // highway=residential
+	Service,           // highway=service
+	LivingStreet,      // highway=living_street
+	Pedestrian,        // highway=pedestrian
+	Footway,           // highway=footway
+	Cycleway,          // highway=cycleway
+	Path,              // highway=path
+	Track,             // highway=track (usually off-road tracks)
+	Bridleway,         // highway=bridleway (for horse riding)
+	Steps,             // highway=steps (for staircases)
+	Road,              // highway=road (generic road with unspecified type)
+};
+
+enum class PathSurfaceMaterial {
+	Unknown,           // For any unrecognized surface materials
+	Asphalt,           // surface=asphalt
+	Concrete,          // surface=concrete
+	Paved,             // surface=paved
+	Unpaved,           // surface=unpaved
+	Gravel,            // surface=gravel
+	Dirt,              // surface=dirt
+	Sand,              // surface=sand
+	Grass,             // surface=grass
+	Mud,               // surface=mud
+	Cobblestone,       // surface=cobblestone
+	Pebblestone,       // surface=pebblestone
+	Sett,              // surface=sett (a form of paving stone)
+	Wood,              // surface=wood (used for wooden walkways or bridges)
+	Metal,             // surface=metal (metal surfaces, e.g. bridges)
+	Snow,              // surface=snow
+	Ice,               // surface=ice
+	Compacted,         // surface=compacted (compacted gravel or soil)
+	FineGravel,        // surface=fine_gravel
+	Ground             // surface=ground (natural ground surface)
+};
+
+struct FPathData : public FMapElement {
+	PathType pathType;
+	PathSurfaceMaterial surfaceMaterial;
+	int32_t laneCount;
+	int32_t width;
+	bool isOneWay = false;
+};
+
+enum class LanduseKind {
+	Unknown,         // For unrecognized or unspecified land use types
+	Residential,     // landuse=residential
+	Commercial,      // landuse=commercial
+	Industrial,      // landuse=industrial
+	Military,        // landuse=military
+	Retail,          // landuse=retail
+	Farmland,        // landuse=farmland
+	Farmyard,        // landuse=farmyard
+	Forest,          // landuse=forest
+	Meadow,          // landuse=meadow
+	Grass,           // landuse=grass
+	Orchard,         // landuse=orchard
+	Vineyard,        // landuse=vineyard
+	Quarry,          // landuse=quarry
+	Cemetery,        // landuse=cemetery
+	Allotments,      // landuse=allotments (community gardens)
+	RecreationGround,// landuse=recreation_ground
+	VillageGreen,    // landuse=village_green (open green spaces in villages)
+	Reservoir,       // landuse=reservoir
+	Basin,           // landuse=basin (for water retention)
+	Landfill,        // landuse=landfill (waste disposal)
+	Brownfield,      // landuse=brownfield (previously developed land)
+	Greenfield,      // landuse=greenfield (undeveloped land)
+	Religious,       // landuse=religious (land designated for religious purposes)
+	Railway,         // landuse=railway
+	Port,            // landuse=port
+	Construction,    // landuse=construction (areas under construction)
+	Garages,         // landuse=garages (areas for garages)
+	Parking,         // landuse=parking (parking lots or spaces)
+	Conservation,    // landuse=conservation (protected natural areas)
+	NatureReserve    // landuse=nature_reserve
+};
 
 struct FLanduseData : public FMapElement {
 	LanduseKind kind;
@@ -104,7 +188,8 @@ struct FBuildingData : public FMapElement {
 struct FTileMapData
 {
 public:
-	ARRAY <FMapElement*> water;
+	ARRAY<FPathData*> paths;
 	ARRAY<FBuildingData*> buildings;
 	ARRAY<FLanduseData*> landuse;
+	ARRAY <FMapElement*> water;
 };

@@ -12,4 +12,7 @@ public:
 	static bool ProcessMapDataFromGeoJson(const STRING& mapDataJson, FTileMapData* parsedMapData, int32_t tileX, int32_t tileY, int32_t zoom);
 	static bool ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData* parsedMapData, int32_t tileX, int32_t tileY, int32_t zoom);
 	static STRING LanduseKindToString(LanduseKind kind);
+	static PathType StringToPathType(const STRING& typeStr);
+	static PathSurfaceMaterial StringToPathSurfaceMaterial(const STRING& materialStr);
+	static LanduseKind StringToLanduseKind(const STRING& landuseStr);
 };

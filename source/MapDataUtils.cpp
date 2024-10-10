@@ -40,33 +40,25 @@ static void ParseOneItem(FTileMapData* parsedMapData, Osm::OsmComponent* compone
 	static const int kDefaultLevels = 1;
 	static const int kDefaultHeightPerLevel = 30;
 
+	if (component->IsPath()) {
+		FPathData* fPath = new FPathData();
+		ADD(parsedMapData->paths, fPath);
+		STRING pathTypeStr = component->tags.find("highway") != component->tags.end() ?
+							 component->tags.find("highway")->second.c_str() : "";
+		STRING surfaceStr = component->tags.find("surface") != component->tags.end() ?
+							component->tags.find("surface")->second.c_str() : "";
+		fPath->pathType = MapDataUtils::StringToPathType(pathTypeStr);
+		fPath->surfaceMaterial = MapDataUtils::StringToPathSurfaceMaterial(surfaceStr);
+		fPath->geometry = component->CreateGeometry(tileCornerLow, tileCornerHigh);
+	}
 	if (component->IsLandUse()) {
 		FLanduseData* fLanduse = new FLanduseData();
 		ADD(parsedMapData->landuse, fLanduse);
 		LanduseKind landuseKind = LanduseKind::Unknown;
-		const char* landuseStr = component->tags.find("landuse") != component->tags.end() ?
-								 component->tags.find("landuse")->second.c_str() : "";
-		if (strcmp(landuseStr, "residential") == 0)
-		{
-			landuseKind = LanduseKind::Residental;
-		}
-		if (strcmp(landuseStr, "commercial") == 0)
-		{
-			landuseKind = LanduseKind::Commercial;
-		}
-		if (strcmp(landuseStr, "industrial") == 0)
-		{
-			landuseKind = LanduseKind::Industrial;
-		}
-		if (strcmp(landuseStr, "retail") == 0)
-		{
-			landuseKind = LanduseKind::Retail;
-		}
-		if (strcmp(landuseStr, "military") == 0)
-		{
-			landuseKind = LanduseKind::Military;
-		}
-		fLanduse->kind = landuseKind;
+		STRING landuseStr = component->tags.find("landuse") != component->tags.end() ?
+							component->tags.find("landuse")->second.c_str() : "";
+		
+		fLanduse->kind = MapDataUtils::StringToLanduseKind(landuseStr);
 		fLanduse->geometry = component->CreateGeometry(tileCornerLow, tileCornerHigh);
 	}
 	if (component->IsBuilding()) 
@@ -218,7 +210,7 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 STRING MapDataUtils::LanduseKindToString(LanduseKind kind) {
 	switch (kind) {
 	case LanduseKind::Commercial : return "Commercial";
-	case LanduseKind::Residental: return "Residential";
+	case LanduseKind::Residential: return "Residential";
 	case LanduseKind::Industrial: return "Industrial";
 	case LanduseKind::Retail: return "Retail";
 	case LanduseKind::Military: return "Military";
@@ -226,3 +218,80 @@ STRING MapDataUtils::LanduseKindToString(LanduseKind kind) {
 	}
 }
 
+PathType MapDataUtils::StringToPathType(const STRING& typeStr) {
+	if (typeStr == "motorway") return PathType::Motorway;
+	else if (typeStr == "trunk") return PathType::Trunk;
+	else if (typeStr == "primary") return PathType::Primary;
+	else if (typeStr == "secondary") return PathType::Secondary;
+	else if (typeStr == "tertiary") return PathType::Tertiary;
+	else if (typeStr == "unclassified") return PathType::Unclassified;
+	else if (typeStr == "residential") return PathType::Residential;
+	else if (typeStr == "service") return PathType::Service;
+	else if (typeStr == "living_street") return PathType::LivingStreet;
+	else if (typeStr == "pedestrian") return PathType::Pedestrian;
+	else if (typeStr == "footway") return PathType::Footway;
+	else if (typeStr == "cycleway") return PathType::Cycleway;
+	else if (typeStr == "path") return PathType::Path;
+	else if (typeStr == "track") return PathType::Track;
+	else if (typeStr == "bridleway") return PathType::Bridleway;
+	else if (typeStr == "steps") return PathType::Steps;
+	else if (typeStr == "road") return PathType::Road;
+	else return PathType::Unknown;
+}
+
+PathSurfaceMaterial MapDataUtils::StringToPathSurfaceMaterial(const STRING& materialStr) {
+	if (materialStr == "asphalt") return PathSurfaceMaterial::Asphalt;
+	else if (materialStr == "concrete") return PathSurfaceMaterial::Concrete;
+	else if (materialStr == "paved") return PathSurfaceMaterial::Paved;
+	else if (materialStr == "unpaved") return PathSurfaceMaterial::Unpaved;
+	else if (materialStr == "gravel") return PathSurfaceMaterial::Gravel;
+	else if (materialStr == "dirt") return PathSurfaceMaterial::Dirt;
+	else if (materialStr == "sand") return PathSurfaceMaterial::Sand;
+	else if (materialStr == "grass") return PathSurfaceMaterial::Grass;
+	else if (materialStr == "mud") return PathSurfaceMaterial::Mud;
+	else if (materialStr == "cobblestone") return PathSurfaceMaterial::Cobblestone;
+	else if (materialStr == "pebblestone") return PathSurfaceMaterial::Pebblestone;
+	else if (materialStr == "sett") return PathSurfaceMaterial::Sett;
+	else if (materialStr == "wood") return PathSurfaceMaterial::Wood;
+	else if (materialStr == "metal") return PathSurfaceMaterial::Metal;
+	else if (materialStr == "snow") return PathSurfaceMaterial::Snow;
+	else if (materialStr == "ice") return PathSurfaceMaterial::Ice;
+	else if (materialStr == "compacted") return PathSurfaceMaterial::Compacted;
+	else if (materialStr == "fine_gravel") return PathSurfaceMaterial::FineGravel;
+	else if (materialStr == "ground") return PathSurfaceMaterial::Ground;
+	else return PathSurfaceMaterial::Unknown;
+}
+
+LanduseKind MapDataUtils::StringToLanduseKind(const STRING& landuseStr) {
+	if (landuseStr == "residential") return LanduseKind::Residential;
+	else if (landuseStr == "commercial") return LanduseKind::Commercial;
+	else if (landuseStr == "industrial") return LanduseKind::Industrial;
+	else if (landuseStr == "military") return LanduseKind::Military;
+	else if (landuseStr == "retail") return LanduseKind::Retail;
+	else if (landuseStr == "farmland") return LanduseKind::Farmland;
+	else if (landuseStr == "farmyard") return LanduseKind::Farmyard;
+	else if (landuseStr == "forest") return LanduseKind::Forest;
+	else if (landuseStr == "meadow") return LanduseKind::Meadow;
+	else if (landuseStr == "grass") return LanduseKind::Grass;
+	else if (landuseStr == "orchard") return LanduseKind::Orchard;
+	else if (landuseStr == "vineyard") return LanduseKind::Vineyard;
+	else if (landuseStr == "quarry") return LanduseKind::Quarry;
+	else if (landuseStr == "cemetery") return LanduseKind::Cemetery;
+	else if (landuseStr == "allotments") return LanduseKind::Allotments;
+	else if (landuseStr == "recreation_ground") return LanduseKind::RecreationGround;
+	else if (landuseStr == "village_green") return LanduseKind::VillageGreen;
+	else if (landuseStr == "reservoir") return LanduseKind::Reservoir;
+	else if (landuseStr == "basin") return LanduseKind::Basin;
+	else if (landuseStr == "landfill") return LanduseKind::Landfill;
+	else if (landuseStr == "brownfield") return LanduseKind::Brownfield;
+	else if (landuseStr == "greenfield") return LanduseKind::Greenfield;
+	else if (landuseStr == "religious") return LanduseKind::Religious;
+	else if (landuseStr == "railway") return LanduseKind::Railway;
+	else if (landuseStr == "port") return LanduseKind::Port;
+	else if (landuseStr == "construction") return LanduseKind::Construction;
+	else if (landuseStr == "garages") return LanduseKind::Garages;
+	else if (landuseStr == "parking") return LanduseKind::Parking;
+	else if (landuseStr == "conservation") return LanduseKind::Conservation;
+	else if (landuseStr == "nature_reserve") return LanduseKind::NatureReserve;
+	else return LanduseKind::Unknown;
+}

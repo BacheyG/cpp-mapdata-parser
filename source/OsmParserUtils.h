@@ -24,6 +24,7 @@ struct MultigonCache {
 struct OsmComponent {
 	std::unordered_map<std::string, std::string> tags;
 	void AddTags(tinyxml2::XMLElement* source);
+	bool IsPath() const;
 	bool IsBuilding() const;
 	bool IsLandUse() const;
 	uint64_t id = 0;
