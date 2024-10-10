@@ -214,3 +214,15 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 
 	return true;
 }
+
+STRING MapDataUtils::LanduseKindToString(LanduseKind kind) {
+	switch (kind) {
+	case LanduseKind::Commercial : return "Commercial";
+	case LanduseKind::Residental: return "Residential";
+	case LanduseKind::Industrial: return "Industrial";
+	case LanduseKind::Retail: return "Retail";
+	case LanduseKind::Military: return "Military";
+	default: return "Unknown";
+	}
+}
+

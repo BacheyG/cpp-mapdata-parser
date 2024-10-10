@@ -104,7 +104,7 @@ struct FBuildingData : public FMapElement {
 struct FTileMapData
 {
 public:
-	FMapElement* water;
+	ARRAY <FMapElement*> water;
 	ARRAY<FBuildingData*> buildings;
 	ARRAY<FLanduseData*> landuse;
 };
