@@ -23,6 +23,10 @@ namespace Osm {
 		return tags.find("building") != tags.end() || tags.find("building:part") != tags.end();
 	}
 
+	bool OsmComponent::IsLandUse() const {
+		return tags.find("landuse") != tags.end();
+	}
+
 	static void PopulateCoordinate(FCoordinate* coordinate, LatLong input, LatLong lowerCorner, LatLong upperCorner) {
 		coordinate->globalPosition = input;
 		coordinate->localPosition.X = GetRangeMappedValue(coordinate->globalPosition.longitude,

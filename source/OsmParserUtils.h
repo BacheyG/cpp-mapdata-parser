@@ -25,6 +25,7 @@ struct OsmComponent {
 	std::unordered_map<std::string, std::string> tags;
 	void AddTags(tinyxml2::XMLElement* source);
 	bool IsBuilding() const;
+	bool IsLandUse() const;
 	uint64_t id = 0;
 	virtual FMapGeometry* CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const = 0;
 };

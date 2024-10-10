@@ -168,7 +168,7 @@ static void ParseGeometry(const TileData& inputData, int32_t& i, FMapGeometry& g
 	}
 }
 
-static void ParseProperties(const TileData& inputData, int32_t& i, FProperties& properties) {
+static void ParseProperties(const TileData& inputData, int32_t& i, FMapElement& properties) {
 	JsonParserState parser;
 	while (i < LENGTH(inputData.mapDataJson)) {
 		parser.UpdateState(inputData.mapDataJson[i]);
@@ -186,63 +186,5 @@ static void ParseProperties(const TileData& inputData, int32_t& i, FProperties& 
 			break;
 		}
 		i += 1;
-	}
-}
-
-static void ParseFeature(const TileData& inputData, int32_t& i, FFeature& feature) {
-	JsonParserState parser;
-	while (i < LENGTH(inputData.mapDataJson)) {
-		parser.UpdateState(inputData.mapDataJson[i]);
-
-		if (inputData.mapDataJson[i] == '"' && parser.GetBracketDepth() == 1) {
-			parser.FlipIsInString();
-			STRING foundKey;
-			ParseString(inputData, i, foundKey);
-			//TryParseValueFor<FFeatureGeometry>("geometry", feature.geometry, foundKey, inputData, i, ParseGeometry);
-			FProperties* fProperties = new FProperties();
-			feature.properties = fProperties;
-			TryParseValueFor<FProperties>("properties", *fProperties, foundKey, inputData, i, ParseProperties);
-		}
-		if (parser.IsInValidState()) {
-			break;
-		}
-		i += 1;
-	}
-}
-
-static void ParseFeatureArray(const TileData& inputData, int32_t& i, ARRAY<FFeature*>& featureArray) {
-	JsonParserState parser;
-	while (i < LENGTH(inputData.mapDataJson)) {
-		parser.UpdateState(inputData.mapDataJson[i]);
-
-		if (inputData.mapDataJson[i] == '{' && parser.GetBracketDepth() == 1) {
-			FFeature* feature = new FFeature();
-			ParseFeature(inputData, i, *feature);
-			ADD(featureArray, feature);
-			parser.UndoBracketIncrement();
-		}
-		if (parser.IsInValidState()) {
-			break;
-		}
-		i += 1;
-	}
-}
-
-static void ParseLayer(const TileData& inputData, int32_t& i, FMapLayer& layer) {
-	JsonParserState parser;
-	while (i < LENGTH(inputData.mapDataJson)) {
-		parser.UpdateState(inputData.mapDataJson[i]);
-		if (parser.GetBracketDepth() == 1 && inputData.mapDataJson[i] == '"') {
-			STRING foundKey;
-			ParseString(inputData, i, foundKey);
-			parser.FlipIsInString();
-			TryParseValueFor<STRING>("type", layer.type, foundKey, inputData, i, ParseString);
-			TryParseValueFor<ARRAY<FFeature*>>("features", layer.features, foundKey, inputData, i, ParseFeatureArray);
-		}
-
-		if (parser.IsInValidState()) {
-			break;
-		}
-		++i;
 	}
 }

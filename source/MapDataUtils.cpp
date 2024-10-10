@@ -28,8 +28,7 @@ bool MapDataUtils::ProcessMapDataFromGeoJson(const STRING& mapDataJson, FTileMap
 			STRING foundKey;
 			ParseString(inputData, i, foundKey);
 			parser.FlipIsInString();
-			TryParseValueFor<FMapLayer>("water", parsedMapData->water, foundKey, inputData, i, ParseLayer);
-			//TryParseValueFor<FMapLayer>("buildings", parsedMapData->buildings, foundKey, inputData, i, ParseLayer);
+			// TODO: Parse JSON items.
 		}
 	}
 
@@ -41,13 +40,40 @@ static void ParseOneItem(FTileMapData* parsedMapData, Osm::OsmComponent* compone
 	static const int kDefaultLevels = 1;
 	static const int kDefaultHeightPerLevel = 30;
 
+	if (component->IsLandUse()) {
+		FLanduseData* fLanduse = new FLanduseData();
+		ADD(parsedMapData->landuse, fLanduse);
+		LanduseKind landuseKind = LanduseKind::Unknown;
+		const char* landuseStr = component->tags.find("landuse") != component->tags.end() ?
+								 component->tags.find("landuse")->second.c_str() : "";
+		if (strcmp(landuseStr, "residential") == 0)
+		{
+			landuseKind = LanduseKind::Residental;
+		}
+		if (strcmp(landuseStr, "commercial") == 0)
+		{
+			landuseKind = LanduseKind::Commercial;
+		}
+		if (strcmp(landuseStr, "industrial") == 0)
+		{
+			landuseKind = LanduseKind::Industrial;
+		}
+		if (strcmp(landuseStr, "retail") == 0)
+		{
+			landuseKind = LanduseKind::Retail;
+		}
+		if (strcmp(landuseStr, "military") == 0)
+		{
+			landuseKind = LanduseKind::Military;
+		}
+		fLanduse->kind = landuseKind;
+		fLanduse->geometry = component->CreateGeometry(tileCornerLow, tileCornerHigh);
+	}
 	if (component->IsBuilding()) 
 	{
 		FBuildingData* fBuilding = new FBuildingData();
-		FBuildingProperties* buildingProperties = new FBuildingProperties();
-		fBuilding->properties = buildingProperties;
 		ADD(parsedMapData->buildings, fBuilding);
-		buildingProperties->id = component->id;
+		fBuilding->id = component->id;
 		auto minHeightTag = component->tags.find("min-height");
 		auto heightTag = component->tags.find("height");
 		auto levelTag = component->tags.find("levels");
@@ -67,8 +93,8 @@ static void ParseOneItem(FTileMapData* parsedMapData, Osm::OsmComponent* compone
 		{
 			heightValue = levelValue * kDefaultHeightPerLevel;
 		}
-		buildingProperties->height = heightValue;
-		buildingProperties->levels = levelValue;
+		fBuilding->height = heightValue;
+		fBuilding->levels = levelValue;
 		fBuilding->geometry = component->CreateGeometry(tileCornerLow, tileCornerHigh);
 	}
 }
@@ -174,6 +200,16 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 	for (const auto& osmItem : osmCache.nodes)
 	{
 		ParseOneItem(parsedMapData, osmItem.second, tileCornerLow, tileCornerHigh);
+	}
+
+	for (FBuildingData* building : parsedMapData->buildings) {
+		for (FLanduseData* landuse : parsedMapData->landuse) {
+			if (ShapeUtils::IsPointInShape(landuse->geometry->GetMainSegment(), building->geometry->GetMainSegment()->coordinates[0]->localPosition))
+			{
+				building->belongingLanduse = landuse;
+				break;
+			}
+		}
 	}
 
 	return true;

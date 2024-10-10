@@ -74,45 +74,37 @@ private:
 	int CurrentIndex = 0;
 };
 
-struct FProperties {
+struct FMapElement {
 public:
 	STRING name;
 	int64_t id;
 	int area;
+	FMapGeometry* geometry;
 };
 
-enum BuildingKind { House, Residental, Retail, Church, Goverment, Museum  };
+enum class LanduseKind { Unknown, Residental, Commercial, Industrial, Military, Retail };
+
+struct FLanduseData : public FMapElement {
+	LanduseKind kind;
+};
+
+enum class BuildingKind { House, Residental, Retail, Church, Goverment, Museum  };
 enum RoofType { Flat, Hipped, Pyramidal, Dome };
 
-struct FBuildingProperties : public FProperties {
+struct FBuildingData : public FMapElement {
 	BuildingKind kind;
 	RoofType roofType;
+	FLanduseData* belongingLanduse;
 	int minHeight;
 	int height;
 	int levels;
 	int roofHeight;
 };
 
-struct FBuildingData {
-	FMapGeometry* geometry;
-	FBuildingProperties* properties;
-};
-
-struct FFeature {
-public:
-	FMapGeometry* geometry;
-	FProperties* properties;
-};
-
-struct FMapLayer {
-public:
-	STRING type;
-	ARRAY<FFeature*> features;
-};
-
 struct FTileMapData
 {
 public:
-	FMapLayer water;
+	FMapElement* water;
 	ARRAY<FBuildingData*> buildings;
+	ARRAY<FLanduseData*> landuse;
 };
