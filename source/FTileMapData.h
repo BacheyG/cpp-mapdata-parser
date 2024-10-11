@@ -191,5 +191,5 @@ public:
 	ARRAY<FPathData*> paths;
 	ARRAY<FBuildingData*> buildings;
 	ARRAY<FLanduseData*> landuse;
-	ARRAY <FMapElement*> water;
+	ARRAY<FMapElement*> water;
 };
