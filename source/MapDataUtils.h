@@ -15,4 +15,6 @@ public:
 	static PathType StringToPathType(const STRING& typeStr);
 	static PathSurfaceMaterial StringToPathSurfaceMaterial(const STRING& materialStr);
 	static LanduseKind StringToLanduseKind(const STRING& landuseStr);
+	static BuildingKind StringToBuildingKind(const STRING& buildingStr);
+	static RoofShape StringToRoofShape(const STRING& roofStr);
 };

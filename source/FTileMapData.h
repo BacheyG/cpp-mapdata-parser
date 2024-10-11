@@ -13,18 +13,18 @@ public:
 	const STRING& mapDataJson;
 };
 
-enum EGeometryType {
+/*enum EGeometryType {
 	Node,
 	Line,
 	Polygon,
 	Composite
-};
+};*/
 
 struct FLine;
 
 struct FMapGeometry {
 public:
-	EGeometryType type;
+	//EGeometryType type;
 	virtual FLine* GetMainSegment() = 0;
 	virtual ARRAY<FLine*> GetHoleSegments() = 0;
 	virtual int GetComponentCount() { return 1; }
@@ -172,12 +172,80 @@ struct FLanduseData : public FMapElement {
 	LanduseKind kind;
 };
 
-enum class BuildingKind { House, Residental, Retail, Church, Goverment, Museum  };
-enum RoofType { Flat, Hipped, Pyramidal, Dome };
+enum class BuildingKind {
+	Unknown,            // Unrecognized or unspecified building types
+	Yes,                // building=yes (generic building)
+	House,              // building=house
+	Apartments,         // building=apartments
+	Commercial,         // building=commercial
+	Industrial,         // building=industrial
+	Retail,             // building=retail
+	Residential,        // building=residential
+	Church,             // building=church
+	Cathedral,          // building=cathedral
+	School,             // building=school
+	Hospital,           // building=hospital
+	Warehouse,          // building=warehouse
+	Garage,             // building=garage
+	Shed,               // building=shed
+	Hut,                // building=hut
+	Cabin,              // building=cabin
+	Barn,               // building=barn
+	Detached,           // building=detached
+	Public,             // building=public
+	Kiosk,              // building=kiosk
+	Office,             // building=office
+	Bunker,             // building=bunker
+	Hotel,              // building=hotel
+	Dormitory,          // building=dormitory
+	Stable,             // building=stable
+	Roof,               // building=roof (structures with a roof only)
+	TrainStation,       // building=train_station
+	Service,            // building=service
+	Terrace,            // building=terrace
+	Supermarket,        // building=supermarket
+	University,         // building=university
+	GarageDetached,     // building=garage_detached
+	Construction,       // building=construction
+	Ruins,              // building=ruins
+	Mosque,             // building=mosque
+	Temple,             // building=temple
+	Civic,              // building=civic
+	SportsHall,         // building=sports_hall
+	Hangar,             // building=hangar
+	StaticCaravan,      // building=static_caravan
+	Greenhouse          // building=greenhouse
+}; 
+
+enum class RoofShape {
+	Unknown,          // Unrecognized or unspecified roof shape
+	Flat,             // roof:shape=flat
+	Gabled,           // roof:shape=gabled
+	Hipped,           // roof:shape=hipped
+	Pitched,          // roof:shape=pitched
+	Gambrel,          // roof:shape=gambrel
+	Mansard,          // roof:shape=mansard
+	HalfHipped,       // roof:shape=half_hipped
+	Round,            // roof:shape=round
+	Saltbox,          // roof:shape=saltbox
+	Skillion,         // roof:shape=skillion
+	Dome,             // roof:shape=dome
+	Pyramidal,        // roof:shape=pyramidal
+	Onion,            // roof:shape=onion
+	Bonnet,           // roof:shape=bonnet
+	Sawtooth,         // roof:shape=sawtooth
+	Tent,             // roof:shape=tent
+	Butterfly,        // roof:shape=butterfly
+	SideHipped,       // roof:shape=side_hipped
+	Barrel,           // roof:shape=barrel
+	Conical,          // roof:shape=conical
+	Hexagonal,        // roof:shape=hexagonal
+	CrossGabled       // roof:shape=cross_gabled
+};
 
 struct FBuildingData : public FMapElement {
 	BuildingKind kind;
-	RoofType roofType;
+	RoofShape roofShape;
 	FLanduseData* belongingLanduse;
 	int minHeight;
 	int height;

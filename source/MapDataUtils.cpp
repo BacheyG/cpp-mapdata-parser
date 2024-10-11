@@ -35,7 +35,7 @@ bool MapDataUtils::ProcessMapDataFromGeoJson(const STRING& mapDataJson, FTileMap
 	return true;
 }
 
-static void ParseOneItem(FTileMapData* parsedMapData, Osm::OsmComponent* component, LatLong tileCornerLow, LatLong tileCornerHigh) 
+static void ParseOneItem(FTileMapData* parsedMapData, Osm::OsmComponent* component, LatLong tileCornerLow, LatLong tileCornerHigh)
 {
 	static const int kDefaultLevels = 1;
 	static const int kDefaultHeightPerLevel = 30;
@@ -44,9 +44,9 @@ static void ParseOneItem(FTileMapData* parsedMapData, Osm::OsmComponent* compone
 		FPathData* fPath = new FPathData();
 		ADD(parsedMapData->paths, fPath);
 		STRING pathTypeStr = component->tags.find("highway") != component->tags.end() ?
-							 component->tags.find("highway")->second.c_str() : "";
+			component->tags.find("highway")->second.c_str() : "";
 		STRING surfaceStr = component->tags.find("surface") != component->tags.end() ?
-							component->tags.find("surface")->second.c_str() : "";
+			component->tags.find("surface")->second.c_str() : "";
 		fPath->pathType = MapDataUtils::StringToPathType(pathTypeStr);
 		fPath->surfaceMaterial = MapDataUtils::StringToPathSurfaceMaterial(surfaceStr);
 		fPath->geometry = component->CreateGeometry(tileCornerLow, tileCornerHigh);
@@ -56,19 +56,21 @@ static void ParseOneItem(FTileMapData* parsedMapData, Osm::OsmComponent* compone
 		ADD(parsedMapData->landuse, fLanduse);
 		LanduseKind landuseKind = LanduseKind::Unknown;
 		STRING landuseStr = component->tags.find("landuse") != component->tags.end() ?
-							component->tags.find("landuse")->second.c_str() : "";
-		
+			component->tags.find("landuse")->second.c_str() : "";
+
 		fLanduse->kind = MapDataUtils::StringToLanduseKind(landuseStr);
 		fLanduse->geometry = component->CreateGeometry(tileCornerLow, tileCornerHigh);
 	}
-	if (component->IsBuilding()) 
+	if (component->IsBuilding())
 	{
 		FBuildingData* fBuilding = new FBuildingData();
 		ADD(parsedMapData->buildings, fBuilding);
 		fBuilding->id = component->id;
+		auto buildingTag = component->tags.find("building");
 		auto minHeightTag = component->tags.find("min-height");
 		auto heightTag = component->tags.find("height");
 		auto levelTag = component->tags.find("levels");
+		auto roofShapeTag = component->tags.find("roof:shape");
 		uint32_t levelValue = (minHeightTag != component->tags.end()) ? std::stoi(heightTag->second) : 0;
 		float heightValue = (heightTag != component->tags.end()) ? std::stoi(heightTag->second) : 0;
 		uint32_t minHeightValue = (minHeightTag != component->tags.end()) ? std::stoi(minHeightTag->second) : 0;
@@ -76,17 +78,21 @@ static void ParseOneItem(FTileMapData* parsedMapData, Osm::OsmComponent* compone
 		{
 			levelValue = kDefaultLevels;
 			heightValue = kDefaultHeightPerLevel * levelValue;
-		} 
-		else if (levelValue == 0) 
+		}
+		else if (levelValue == 0)
 		{
 			levelValue = heightValue / kDefaultHeightPerLevel;
 		}
-		else if (heightValue == 0) 
+		else if (heightValue == 0)
 		{
 			heightValue = levelValue * kDefaultHeightPerLevel;
 		}
+		fBuilding->kind = buildingTag != component->tags.end() ? MapDataUtils::StringToBuildingKind(buildingTag->second.c_str())
+			: BuildingKind::Yes;
 		fBuilding->height = heightValue;
 		fBuilding->levels = levelValue;
+		fBuilding->roofShape = roofShapeTag != component->tags.end() ? MapDataUtils::StringToRoofShape(roofShapeTag->second.c_str())
+			: RoofShape::Flat;
 		fBuilding->geometry = component->CreateGeometry(tileCornerLow, tileCornerHigh);
 	}
 }
@@ -179,7 +185,7 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 	//parsedMapData->buildings = FMapLayer();
 
 	// Parse everything
-	for (const auto& osmItem : osmCache.relations) 
+	for (const auto& osmItem : osmCache.relations)
 	{
 		ParseOneItem(parsedMapData, osmItem.second, tileCornerLow, tileCornerHigh);
 	}
@@ -209,7 +215,7 @@ bool MapDataUtils::ProcessMapDataFromOsm(const STRING& mapDataOsm, FTileMapData*
 
 STRING MapDataUtils::LanduseKindToString(LanduseKind kind) {
 	switch (kind) {
-	case LanduseKind::Commercial : return "Commercial";
+	case LanduseKind::Commercial: return "Commercial";
 	case LanduseKind::Residential: return "Residential";
 	case LanduseKind::Industrial: return "Industrial";
 	case LanduseKind::Retail: return "Retail";
@@ -294,4 +300,75 @@ LanduseKind MapDataUtils::StringToLanduseKind(const STRING& landuseStr) {
 	else if (landuseStr == "conservation") return LanduseKind::Conservation;
 	else if (landuseStr == "nature_reserve") return LanduseKind::NatureReserve;
 	else return LanduseKind::Unknown;
+}
+
+BuildingKind MapDataUtils::StringToBuildingKind(const STRING& buildingStr) {
+	if (buildingStr == "yes") return BuildingKind::Yes;
+	else if (buildingStr == "house") return BuildingKind::House;
+	else if (buildingStr == "apartments") return BuildingKind::Apartments;
+	else if (buildingStr == "commercial") return BuildingKind::Commercial;
+	else if (buildingStr == "industrial") return BuildingKind::Industrial;
+	else if (buildingStr == "retail") return BuildingKind::Retail;
+	else if (buildingStr == "residential") return BuildingKind::Residential;
+	else if (buildingStr == "church") return BuildingKind::Church;
+	else if (buildingStr == "cathedral") return BuildingKind::Cathedral;
+	else if (buildingStr == "school") return BuildingKind::School;
+	else if (buildingStr == "hospital") return BuildingKind::Hospital;
+	else if (buildingStr == "warehouse") return BuildingKind::Warehouse;
+	else if (buildingStr == "garage") return BuildingKind::Garage;
+	else if (buildingStr == "shed") return BuildingKind::Shed;
+	else if (buildingStr == "hut") return BuildingKind::Hut;
+	else if (buildingStr == "cabin") return BuildingKind::Cabin;
+	else if (buildingStr == "barn") return BuildingKind::Barn;
+	else if (buildingStr == "detached") return BuildingKind::Detached;
+	else if (buildingStr == "public") return BuildingKind::Public;
+	else if (buildingStr == "kiosk") return BuildingKind::Kiosk;
+	else if (buildingStr == "office") return BuildingKind::Office;
+	else if (buildingStr == "bunker") return BuildingKind::Bunker;
+	else if (buildingStr == "hotel") return BuildingKind::Hotel;
+	else if (buildingStr == "dormitory") return BuildingKind::Dormitory;
+	else if (buildingStr == "stable") return BuildingKind::Stable;
+	else if (buildingStr == "roof") return BuildingKind::Roof;
+	else if (buildingStr == "train_station") return BuildingKind::TrainStation;
+	else if (buildingStr == "service") return BuildingKind::Service;
+	else if (buildingStr == "terrace") return BuildingKind::Terrace;
+	else if (buildingStr == "supermarket") return BuildingKind::Supermarket;
+	else if (buildingStr == "university") return BuildingKind::University;
+	else if (buildingStr == "garage_detached") return BuildingKind::GarageDetached;
+	else if (buildingStr == "construction") return BuildingKind::Construction;
+	else if (buildingStr == "ruins") return BuildingKind::Ruins;
+	else if (buildingStr == "mosque") return BuildingKind::Mosque;
+	else if (buildingStr == "temple") return BuildingKind::Temple;
+	else if (buildingStr == "civic") return BuildingKind::Civic;
+	else if (buildingStr == "sports_hall") return BuildingKind::SportsHall;
+	else if (buildingStr == "hangar") return BuildingKind::Hangar;
+	else if (buildingStr == "static_caravan") return BuildingKind::StaticCaravan;
+	else if (buildingStr == "greenhouse") return BuildingKind::Greenhouse;
+	else return BuildingKind::Unknown;
+}
+
+RoofShape MapDataUtils::StringToRoofShape(const STRING& roofStr) {
+	if (roofStr == "flat") return RoofShape::Flat;
+	else if (roofStr == "gabled") return RoofShape::Gabled;
+	else if (roofStr == "hipped") return RoofShape::Hipped;
+	else if (roofStr == "pitched") return RoofShape::Pitched;
+	else if (roofStr == "gambrel") return RoofShape::Gambrel;
+	else if (roofStr == "mansard") return RoofShape::Mansard;
+	else if (roofStr == "half_hipped") return RoofShape::HalfHipped;
+	else if (roofStr == "round") return RoofShape::Round;
+	else if (roofStr == "saltbox") return RoofShape::Saltbox;
+	else if (roofStr == "skillion") return RoofShape::Skillion;
+	else if (roofStr == "dome") return RoofShape::Dome;
+	else if (roofStr == "pyramidal") return RoofShape::Pyramidal;
+	else if (roofStr == "onion") return RoofShape::Onion;
+	else if (roofStr == "bonnet") return RoofShape::Bonnet;
+	else if (roofStr == "sawtooth") return RoofShape::Sawtooth;
+	else if (roofStr == "tent") return RoofShape::Tent;
+	else if (roofStr == "butterfly") return RoofShape::Butterfly;
+	else if (roofStr == "side_hipped") return RoofShape::SideHipped;
+	else if (roofStr == "barrel") return RoofShape::Barrel;
+	else if (roofStr == "conical") return RoofShape::Conical;
+	else if (roofStr == "hexagonal") return RoofShape::Hexagonal;
+	else if (roofStr == "cross_gabled") return RoofShape::CrossGabled;
+	else return RoofShape::Unknown;
 }
