@@ -58,6 +58,10 @@ namespace Osm {
 	FMapGeometry* OsmWay::CreateGeometry(LatLong lowerCorner, LatLong upperCorner) const {
 		FLine* fLine = new FLine();
 		for (const auto& node : this->nodes) {
+			if (SIZE(fLine->coordinates) > 0 &&
+				fLine->coordinates[SIZE(fLine->coordinates) - 1]->globalPosition.Equals(node->coordinate)) {
+					continue;
+			}
 			FCoordinate* fCoordinate = new FCoordinate();
 			PopulateCoordinate(fCoordinate, node->coordinate, lowerCorner, upperCorner);
 			ADD(fLine->coordinates, fCoordinate);
