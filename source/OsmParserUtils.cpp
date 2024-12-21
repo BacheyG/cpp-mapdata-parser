@@ -6,6 +6,8 @@
 #include "type_defines.h"
 #include <unordered_set>
 
+#define IS_VERBOSE 0
+
 namespace Osm {
 
 	void OsmComponent::AddTags(tinyxml2::XMLElement* source) {
@@ -143,8 +145,9 @@ namespace Osm {
 			bool isReversed = false;
 			ADD(multigonCache.outerSegments, std::make_pair(currentWay, isReversed));
 			segmentCache.erase(startIterator);
+#if IS_VERBOSE
 			LOG_F("[BEGIN MATCHING] START NODE: %lu END NODE: %lu", currentWay->GetStartNodeId(), currentWay->GetEndNodeId());
-			
+#endif	
 			// In my solution, we keep iterating in the cache looking for a next segment until we create a closed loop or we
 			// are out of way segments.
 			// We also take into account if the segment is reversed or not.
@@ -154,7 +157,9 @@ namespace Osm {
 
 				// We got back matching on the start way
 				if (currentIdToMatch == startWay->GetStartNodeId()) {
+#if IS_VERBOSE
 					LOG("[END MATCHING] Returned to start.");
+#endif
 					break;
 				}
 				for (auto cacheIterator = segmentCache.begin(); cacheIterator != segmentCache.end(); ++cacheIterator) {
@@ -163,8 +168,9 @@ namespace Osm {
 						currentWay = (*cacheIterator);
 						ADD(multigonCache.outerSegments, std::make_pair(currentWay, isReversed));
 						segmentCache.erase(cacheIterator++);
+#if IS_VERBOSE
 						LOG_F("START NODE: %lu END NODE: %lu", currentWay->GetStartNodeId(), currentWay->GetEndNodeId());
-
+#endif
 						break;
 					}
 					else if ((*cacheIterator)->GetEndNodeId() == currentIdToMatch) {
@@ -172,14 +178,17 @@ namespace Osm {
 						currentWay = (*cacheIterator);
 						ADD(multigonCache.outerSegments, std::make_pair(currentWay, isReversed));
 						segmentCache.erase(cacheIterator++);
+#if IS_VERBOSE
 						LOG_F("START NODE: %lu END NODE: %lu REVERSED", currentWay->GetStartNodeId(), currentWay->GetEndNodeId());
-
+#endif
 						break;
 					}
 				}
 
 				if (segmentCache.empty()) {
+#if IS_VERBOSE
 					LOG("[END MATCHING] Cache is now empty.");
+#endif
 					break;
 				}
 			}
@@ -189,3 +198,5 @@ namespace Osm {
 		}
 	}
 }
+
+#undef IS_VERBOSE
