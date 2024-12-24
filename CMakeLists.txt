@@ -2,32 +2,57 @@ cmake_minimum_required(VERSION 3.30)
 project(cpp-mapdata-parser)
 
 ###############################################################################
-## file globbing ##############################################################
+## File Globbing ##############################################################
 ###############################################################################
 
-# these instructions search the directory tree when CMake is
-# invoked and put all files that match the pattern in the variables
-# `sources` and `data`
-file(GLOB_RECURSE sources  Source/*.cpp Source/*.h)
-
+file(GLOB_RECURSE sources Source/*.cpp Source/*.h Source/*.hpp)
 
 ###############################################################################
-## target definitions #########################################################
+## Target Definitions #########################################################
 ###############################################################################
 
-# add the data to the target, so it becomes visible in some IDE
-add_executable(cpp-mapdata-parser ${sources} ${data})
+# Add shared library for map data utilities
+add_library(mapdatautils_export SHARED 
+    Source/TileBuildingDataUtils.cpp
+	Source/TileUtils.cpp
+	Source/LatLong.cpp
+)
 
-# just for example add some compiler flags
-target_compile_options(cpp-mapdata-parser PUBLIC /std=c++1y /Wall)
+# Include directory for shared library
+target_include_directories(mapdatautils_export PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/Source
+)
 
-# this lets me include files relative to the root source directory with a <> pair
+# Add executable
+add_executable(cpp-mapdata-parser ${sources})
+
+# Compiler flags
+target_compile_options(cpp-mapdata-parser PUBLIC /std:c++17 /Wall)
+
+# Include directories for the executable
 target_include_directories(cpp-mapdata-parser PUBLIC Source)
 
+# Link executable with the shared library
+target_link_libraries(cpp-mapdata-parser PRIVATE mapdatautils_export)
+
 ###############################################################################
-## packaging ##################################################################
+## Output Properties ##########################################################
 ###############################################################################
 
-# all install commands get the same destination. this allows us to use paths
-# relative to the executable.
+# Set output name and directory for shared library
+set_target_properties(mapdatautils_export PROPERTIES 
+    OUTPUT_NAME "mapdatautils"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+
+# Set output directory for the executable
+set_target_properties(cpp-mapdata-parser PROPERTIES 
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+
+###############################################################################
+## Packaging ##################################################################
+###############################################################################
+
 install(TARGETS cpp-mapdata-parser DESTINATION bin)
+install(TARGETS mapdatautils_export DESTINATION bin)
