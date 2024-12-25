@@ -2,15 +2,22 @@
 
 namespace ShapeUtils {
 
+    double CalculateShapeArea(FLine* shape, bool global) {
+        double result = 0;
+        for (size_t i = 0; i < SIZE(shape->coordinates); ++i) {
+            int32_t next = (i + 1) % SIZE(shape->coordinates);
+            VECTOR2D pCurrent = global ? VECTOR2D(shape->coordinates[i]->globalPosition.latitude, shape->coordinates[i]->globalPosition.longitude) : shape->coordinates[i]->localPosition;
+            VECTOR2D pNext = global ? VECTOR2D(shape->coordinates[next]->globalPosition.latitude, shape->coordinates[next]->globalPosition.longitude) : shape->coordinates[next]->localPosition;
+
+            result += (pNext.X - pCurrent.X) * (pNext.Y + pCurrent.Y);
+        }
+        return result;
+    }
+
     bool CalculateShapeOrientation(FLine* shape) 
     {
-		float result = 0;
-		for (int i = 0; i < SIZE(shape->coordinates); ++i) {
-			int32_t next = (i + 1) % SIZE(shape->coordinates);
-			result += (shape->coordinates[next]->localPosition.X - shape->coordinates[i]->localPosition.X)
-				    * (shape->coordinates[next]->localPosition.Y + shape->coordinates[i]->localPosition.Y);
-		}
-		return result > 0;
+        double result = CalculateShapeArea(shape, false);
+        return result > 0;
 	}
 
     bool IsPointInShape(FLine* shape, VECTOR2D point) 

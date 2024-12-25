@@ -13,9 +13,13 @@ file(GLOB_RECURSE sources Source/*.cpp Source/*.h Source/*.hpp)
 
 # Add shared library for map data utilities
 add_library(mapdatautils_export SHARED 
+	Source/LatLong.cpp
+	Source/MapDataUtils.cpp
+	Source/OsmParserUtils.cpp
+	Source/ShapeUtils.cpp
     Source/TileBuildingDataUtils.cpp
 	Source/TileUtils.cpp
-	Source/LatLong.cpp
+	Source/tinyxml2.cpp
 )
 
 # Include directory for shared library
