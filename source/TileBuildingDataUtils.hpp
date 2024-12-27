@@ -18,12 +18,16 @@ struct BuildingEnvironmentData {
     int buildingLanduseKind;
     bool isHeightKnown;
     double height;
+    bool isBuildingColorKnown;
+    int buildingColor;
     bool isRoofShapeKnown;
     int roofShape;
+    bool isRoofColorKnown;
+    int roofColor;
     int buildingCountNearby;
     double averageBuildingAreaNearby;
     BuildingEnvironmentData() : latitude(-1), longitude(-1), buildingArea(-1), buildingKind(0), buildingLanduseKind(0),
-        isHeightKnown(false), height(0), isRoofShapeKnown(false), roofShape(0),
+        isHeightKnown(false), height(0), isBuildingColorKnown(false), buildingColor(0), isRoofShapeKnown(false), roofShape(0), isRoofColorKnown(false), roofColor(0),
         buildingCountNearby(-1), averageBuildingAreaNearby(-1) {}
 };
 

@@ -35,7 +35,7 @@ struct FCoordinate : public FMapGeometry {
 public:
 	FCoordinate() : globalPosition(0, 0) {}
 	FLine* GetMainSegment() override { return nullptr; } // Invalid, a single node may not have segment
-	ARRAY<FLine*> GetHoleSegments() override { return ARRAY<FLine*>() ; } // Invalid, a single node may not have holes
+	ARRAY<FLine*> GetHoleSegments() override { return ARRAY<FLine*>(); } // Invalid, a single node may not have holes
 	LatLong globalPosition;
 	VECTOR2D localPosition;
 };
@@ -173,79 +173,136 @@ struct FLanduseData : public FMapElement {
 };
 
 enum class BuildingKind {
-	Unknown,            // Unrecognized or unspecified building types
-	Yes,                // building=yes (generic building)
-	House,              // building=house
-	Apartments,         // building=apartments
-	Commercial,         // building=commercial
-	Industrial,         // building=industrial
-	Retail,             // building=retail
-	Residential,        // building=residential
-	Church,             // building=church
-	Cathedral,          // building=cathedral
-	School,             // building=school
-	Hospital,           // building=hospital
-	Warehouse,          // building=warehouse
-	Garage,             // building=garage
-	Shed,               // building=shed
-	Hut,                // building=hut
-	Cabin,              // building=cabin
-	Barn,               // building=barn
-	Detached,           // building=detached
-	Public,             // building=public
-	Kiosk,              // building=kiosk
-	Office,             // building=office
-	Bunker,             // building=bunker
-	Hotel,              // building=hotel
-	Dormitory,          // building=dormitory
-	Stable,             // building=stable
-	Roof,               // building=roof (structures with a roof only)
-	TrainStation,       // building=train_station
-	Service,            // building=service
-	Terrace,            // building=terrace
-	Supermarket,        // building=supermarket
-	University,         // building=university
-	GarageDetached,     // building=garage_detached
-	Construction,       // building=construction
-	Ruins,              // building=ruins
-	Mosque,             // building=mosque
-	Temple,             // building=temple
-	Civic,              // building=civic
-	SportsHall,         // building=sports_hall
-	Hangar,             // building=hangar
-	StaticCaravan,      // building=static_caravan
-	Greenhouse          // building=greenhouse
-}; 
+	Unknown,
+	House,
+	Apartments,
+	Commercial,
+	Industrial,
+	Retail,
+	Residential,
+	Church,
+	Cathedral,
+	School,
+	Hospital,
+	Warehouse,
+	Garage,
+	Shed,
+	Hut,
+	Cabin,
+	Barn,
+	Detached,
+	Public,
+	Kiosk,
+	Office,
+	Bunker,
+	Hotel,
+	Dormitory,
+	Stable,
+	Roof,
+	TrainStation,
+	Service,
+	Terrace,
+	Supermarket,
+	University,
+	GarageDetached,
+	Construction,
+	Ruins,
+	Mosque,
+	Temple,
+	Civic,
+	SportsHall,
+	Hangar,
+	StaticCaravan,
+	Greenhouse
+};
 
 enum class RoofShape {
-	Unknown,          // Unrecognized or unspecified roof shape
-	Flat,             // roof:shape=flat
-	Gabled,           // roof:shape=gabled
-	Hipped,           // roof:shape=hipped
-	Pitched,          // roof:shape=pitched
-	Gambrel,          // roof:shape=gambrel
-	Mansard,          // roof:shape=mansard
-	HalfHipped,       // roof:shape=half_hipped
-	Round,            // roof:shape=round
-	Saltbox,          // roof:shape=saltbox
-	Skillion,         // roof:shape=skillion
-	Dome,             // roof:shape=dome
-	Pyramidal,        // roof:shape=pyramidal
-	Onion,            // roof:shape=onion
-	Bonnet,           // roof:shape=bonnet
-	Sawtooth,         // roof:shape=sawtooth
-	Tent,             // roof:shape=tent
-	Butterfly,        // roof:shape=butterfly
-	SideHipped,       // roof:shape=side_hipped
-	Barrel,           // roof:shape=barrel
-	Conical,          // roof:shape=conical
-	Hexagonal,        // roof:shape=hexagonal
-	CrossGabled       // roof:shape=cross_gabled
+	Unknown,
+	Flat,
+	Gabled,
+	Hipped,
+	Pitched,
+	Gambrel,
+	Mansard,
+	HalfHipped,
+	Round,
+	Saltbox,
+	Skillion,
+	Dome,
+	Pyramidal,
+	Onion,
+	Bonnet,
+	Sawtooth,
+	Tent,
+	Butterfly,
+	SideHipped,
+	Barrel,
+	Conical,
+	Hexagonal,
+	CrossGabled
+};
+
+enum class MaterialProperty {
+	Unknown,
+	Wood,
+	Concrete,
+	Metal,
+	Steel,
+	Stone,
+	ReinforcedConcrete,
+	Plastic,
+	Brick,
+	Granite,
+	Brass,
+	Glass,
+	Sandstone,
+	Rock,
+	Aluminium,
+	Copper,
+	Soil,
+	Marble,
+	Limestone,
+	Tufa,
+	DryStone,
+	Andesite,
+	Adobe,
+	Iron,
+	CastIron,
+	Sand,
+	Plaster,
+	Slate,
+	WeatheringSteel
+};
+
+enum class ColorProperty {
+	Unknown,
+	Black,
+	Gray,
+	Maroon,
+	Olive,
+	Green,
+	Teal,
+	Navy,
+	Purple,
+	White,
+	Silver,
+	Red,
+	Yellow,
+	Lime,
+	Aqua,
+	Blue,
+	Fuchsia,
+	Brown,
+	Orange,
+	Custom
 };
 
 struct FBuildingData : public FMapElement {
 	BuildingKind kind;
 	RoofShape roofShape;
+	MaterialProperty material;
+	ColorProperty buildingColor;
+	ColorProperty roofColor;
 	FLanduseData* belongingLanduse;
 	int minHeight;
 	bool isHeightKnown;

@@ -44,8 +44,11 @@ BuildingEnvironmentData get_building_environment_data(const char* osmData, int64
 				data.isHeightKnown = buildingData->isHeightKnown;
 				data.height = data.isHeightKnown ? buildingData->height : 0;
 				data.buildingLanduseKind = static_cast<int>(buildingData->belongingLanduse->kind);
+				data.buildingColor = static_cast<int>(buildingData->buildingColor);
+				data.isBuildingColorKnown = buildingData->buildingColor != ColorProperty::Unknown;
+				data.roofColor = static_cast<int>(buildingData->roofColor);
+				data.isRoofColorKnown = buildingData->roofColor != ColorProperty::Unknown;
 				foundBuilding = true;
-				break;
 			}
 		}
 		else {

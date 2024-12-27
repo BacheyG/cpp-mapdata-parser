@@ -17,4 +17,6 @@ public:
 	static LanduseKind StringToLanduseKind(const STRING& landuseStr);
 	static BuildingKind StringToBuildingKind(const STRING& buildingStr);
 	static RoofShape StringToRoofShape(const STRING& roofStr);
+	static MaterialProperty StringToMaterial(const STRING& materialStr);
+	static ColorProperty StringToColor(const STRING& colorStr);
 };

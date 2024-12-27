@@ -72,6 +72,9 @@ static void ParseOneItem(FTileMapData* parsedMapData, Osm::OsmComponent* compone
 		auto heightTag = component->tags.find("height");
 		auto levelTag = component->tags.find("levels");
 		auto roofShapeTag = component->tags.find("roof:shape");
+		auto buildingColourTag = component->tags.find("building:colour");
+		auto roofColourTag = component->tags.find("roof:colour");
+
 		uint32_t levelValue = (minHeightTag != component->tags.end()) ? std::stoi(heightTag->second) : 0;
 		float heightValue = (heightTag != component->tags.end()) ? std::stoi(heightTag->second) : 0;
 		uint32_t minHeightValue = (minHeightTag != component->tags.end()) ? std::stoi(minHeightTag->second) : 0;
@@ -90,11 +93,13 @@ static void ParseOneItem(FTileMapData* parsedMapData, Osm::OsmComponent* compone
 			heightValue = levelValue * kDefaultHeightPerLevel;
 		}
 		fBuilding->kind = buildingTag != component->tags.end() ? MapDataUtils::StringToBuildingKind(buildingTag->second.c_str())
-			: BuildingKind::Yes;
+			: BuildingKind::Unknown;
 		fBuilding->height = heightValue;
 		fBuilding->levels = levelValue;
+		fBuilding->buildingColor = buildingColourTag != component->tags.end() ? MapDataUtils::StringToColor(buildingColourTag->second.c_str()) : ColorProperty::Unknown;
 		fBuilding->roofShape = roofShapeTag != component->tags.end() ? MapDataUtils::StringToRoofShape(roofShapeTag->second.c_str())
 			: RoofShape::Unknown;
+		fBuilding->roofColor = roofColourTag != component->tags.end() ? MapDataUtils::StringToColor(roofColourTag->second.c_str()) : ColorProperty::Unknown;
 		fBuilding->geometry = component->CreateGeometry(tileCornerLow, tileCornerHigh);
 	}
 }
@@ -305,7 +310,7 @@ LanduseKind MapDataUtils::StringToLanduseKind(const STRING& landuseStr) {
 }
 
 BuildingKind MapDataUtils::StringToBuildingKind(const STRING& buildingStr) {
-	if (buildingStr == "yes") return BuildingKind::Yes;
+	if (buildingStr == "yes") return BuildingKind::Unknown;
 	else if (buildingStr == "house") return BuildingKind::House;
 	else if (buildingStr == "apartments") return BuildingKind::Apartments;
 	else if (buildingStr == "commercial") return BuildingKind::Commercial;
@@ -373,4 +378,58 @@ RoofShape MapDataUtils::StringToRoofShape(const STRING& roofStr) {
 	else if (roofStr == "hexagonal") return RoofShape::Hexagonal;
 	else if (roofStr == "cross_gabled") return RoofShape::CrossGabled;
 	else return RoofShape::Unknown;
+}
+
+MaterialProperty MapDataUtils::StringToMaterial(const STRING& materialStr) {
+	if (materialStr == "wood") return MaterialProperty::Wood;
+	else if (materialStr == "concrete") return MaterialProperty::Concrete;
+	else if (materialStr == "metal") return MaterialProperty::Metal;
+	else if (materialStr == "steel") return MaterialProperty::Steel;
+	else if (materialStr == "stone") return MaterialProperty::Stone;
+	else if (materialStr == "reinforced_concrete") return MaterialProperty::ReinforcedConcrete;
+	else if (materialStr == "plastic") return MaterialProperty::Plastic;
+	else if (materialStr == "brick") return MaterialProperty::Brick;
+	else if (materialStr == "granite") return MaterialProperty::Granite;
+	else if (materialStr == "brass") return MaterialProperty::Brass;
+	else if (materialStr == "glass") return MaterialProperty::Glass;
+	else if (materialStr == "sandstone") return MaterialProperty::Sandstone;
+	else if (materialStr == "rock") return MaterialProperty::Rock;
+	else if (materialStr == "aluminium") return MaterialProperty::Aluminium;
+	else if (materialStr == "copper") return MaterialProperty::Copper;
+	else if (materialStr == "soil") return MaterialProperty::Soil;
+	else if (materialStr == "marble") return MaterialProperty::Marble;
+	else if (materialStr == "limestone") return MaterialProperty::Limestone;
+	else if (materialStr == "tufa") return MaterialProperty::Tufa;
+	else if (materialStr == "dry_stone") return MaterialProperty::DryStone;
+	else if (materialStr == "andesite") return MaterialProperty::Andesite;
+	else if (materialStr == "adobe") return MaterialProperty::Adobe;
+	else if (materialStr == "iron") return MaterialProperty::Iron;
+	else if (materialStr == "cast_iron") return MaterialProperty::CastIron;
+	else if (materialStr == "sand") return MaterialProperty::Sand;
+	else if (materialStr == "plaster") return MaterialProperty::Plaster;
+	else if (materialStr == "slate") return MaterialProperty::Slate;
+	else if (materialStr == "weathering_steel") return MaterialProperty::WeatheringSteel;
+	else return MaterialProperty::Unknown;
+}
+
+ColorProperty MapDataUtils::StringToColor(const STRING& colorStr) {
+	if (colorStr == "black") return ColorProperty::Black;
+	else if (colorStr == "gray" || colorStr == "grey") return ColorProperty::Gray;
+	else if (colorStr == "maroon") return ColorProperty::Maroon;
+	else if (colorStr == "olive") return ColorProperty::Olive;
+	else if (colorStr == "green") return ColorProperty::Green;
+	else if (colorStr == "teal") return ColorProperty::Teal;
+	else if (colorStr == "navy") return ColorProperty::Navy;
+	else if (colorStr == "purple") return ColorProperty::Purple;
+	else if (colorStr == "white") return ColorProperty::White;
+	else if (colorStr == "silver") return ColorProperty::Silver;
+	else if (colorStr == "red") return ColorProperty::Red;
+	else if (colorStr == "yellow") return ColorProperty::Yellow;
+	else if (colorStr == "lime") return ColorProperty::Lime;
+	else if (colorStr == "aqua" || colorStr == "cyan") return ColorProperty::Aqua;
+	else if (colorStr == "blue") return ColorProperty::Blue;
+	else if (colorStr == "fuchsia" || colorStr == "magenta") return ColorProperty::Fuchsia;
+	else if (colorStr == "brown") return ColorProperty::Brown;
+	else if (colorStr == "orange") return ColorProperty::Orange;
+	else return ColorProperty::Unknown;
 }
