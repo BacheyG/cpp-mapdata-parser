@@ -66,6 +66,7 @@ static void ParseOneItem(FTileMapData* parsedMapData, Osm::OsmComponent* compone
 		FBuildingData* fBuilding = new FBuildingData();
 		ADD(parsedMapData->buildings, fBuilding);
 		fBuilding->id = component->id;
+		fBuilding->isHeightKnown = true;
 		auto buildingTag = component->tags.find("building");
 		auto minHeightTag = component->tags.find("min-height");
 		auto heightTag = component->tags.find("height");
@@ -78,6 +79,7 @@ static void ParseOneItem(FTileMapData* parsedMapData, Osm::OsmComponent* compone
 		{
 			levelValue = kDefaultLevels;
 			heightValue = kDefaultHeightPerLevel * levelValue;
+			fBuilding->isHeightKnown = false;
 		}
 		else if (levelValue == 0)
 		{
@@ -92,7 +94,7 @@ static void ParseOneItem(FTileMapData* parsedMapData, Osm::OsmComponent* compone
 		fBuilding->height = heightValue;
 		fBuilding->levels = levelValue;
 		fBuilding->roofShape = roofShapeTag != component->tags.end() ? MapDataUtils::StringToRoofShape(roofShapeTag->second.c_str())
-			: RoofShape::Flat;
+			: RoofShape::Unknown;
 		fBuilding->geometry = component->CreateGeometry(tileCornerLow, tileCornerHigh);
 	}
 }

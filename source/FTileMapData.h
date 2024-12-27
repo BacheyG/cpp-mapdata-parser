@@ -248,6 +248,7 @@ struct FBuildingData : public FMapElement {
 	RoofShape roofShape;
 	FLanduseData* belongingLanduse;
 	int minHeight;
+	bool isHeightKnown;
 	int height;
 	int levels;
 	int roofHeight;
